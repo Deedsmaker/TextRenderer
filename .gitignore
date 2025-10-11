@@ -1,0 +1,59 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+#*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+#*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+*.pdb
+
+*.vsidx
+
+/.vs/
+/build/.vs/main/v17/.suo
+/build/.vs/main/v17/Browse.VC.db
+/build/.vs/main/v17/Browse.VC.db-shm
+/build/.vs/main/v17/Browse.VC.db-wal
+/build/.vs/main/v17/Browse.VC.opendb
+/build/.vs/main/v17/ipch/AutoPCH/135407c470c07a10/MAIN.ipch
+/build/main.ilk
+/build/.vs/main/v17/ipch/AutoPCH/8afe063ae3ae30b6/*.ipch
+/build/.vs/main/v17/ipch/AutoPCH/4f1ec94e6e7234e7/MAIN.ipch
+*.ipch
+*.db
+
+*.7z
+*.zip
+*.rar
+
+*.rdi
+*.ilk
+
+/build/levels/autosaves/
+/build/temp/
