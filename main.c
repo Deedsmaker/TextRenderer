@@ -90,14 +90,20 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         // Initial direct drawing
         HDC hdc = GetDC(hwnd);
         
+        for (i32 i = 0; i < (i32)(g_screenBuffer->height * 0.5f); i++) {
+            for (i32 j = 0; j < (i32)(g_screenBuffer->width * 0.5f); j++) {
+                g_screenBuffer->pixels[i * g_screenBuffer->width + j] = 0xffff0000;
+            }
+        }
+        
         // Draw our screen buffer
         if (g_screenBuffer) {
             DrawScreenBuffer(hdc, g_screenBuffer, 0, 0);
         }
         
         // Draw some info text
-        SetBkMode(hdc, TRANSPARENT);
-        TextOut(hdc, 10, 10, L"Press R=Random, G=Gradient, C=Clear, Click=Draw", 50);
+        // SetBkMode(hdc, TRANSPARENT);
+        // TextOut(hdc, 10, 10, L"Press R=Random, G=Gradient, C=Clear, Click=Draw", 50);
         
         ReleaseDC(hwnd, hdc);
     }
