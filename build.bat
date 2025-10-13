@@ -9,5 +9,5 @@ if exist build\ (
     mkdir build
 )
 
-cl %options% main.c /link /LIBPATH:..\lib msvcrt.lib Gdi32.lib WinMM.lib kernel32.lib shell32.lib User32.lib /OUT:build\main.exe 
+cl %options% /I .\include main.c /link /LIBPATH:.\lib freetype.lib msvcrt.lib Gdi32.lib WinMM.lib kernel32.lib shell32.lib User32.lib /OUT:build\main.exe 
 

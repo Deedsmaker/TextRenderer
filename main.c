@@ -7,6 +7,9 @@
 #include <assert.h>
 #include <Windows.h>
 
+#include "ft2build.h"
+#include FT_FREETYPE_H
+
 #include "CArray.c"
 
 typedef struct {
@@ -22,6 +25,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 // Global screen buffer
 ScreenBuffer* g_screenBuffer = NULL;
+
+void load_font() {
+    FT_Library font_library;
+    FT_Init_FreeType(&font_library);
+    printf("real\n");
+}
 
 // Draw the screen buffer to a device context
 void DrawScreenBuffer(HDC hdc, ScreenBuffer* buffer, int x, int y)
@@ -63,6 +72,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     wc.lpszClassName = CLASS_NAME;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     
+    AttachConsole(ATTACH_PARENT_PROCESS);
+    //for printf to work
+    freopen("CONOUT$", "w", stdout);
+    
     RegisterClass(&wc);
 
     // Create the window
@@ -77,6 +90,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     
     // 3. Display the window
     ShowWindow(hwnd, nCmdShow);
+    
+    load_font();
+    printf("SFD\n");
     
     // 4. Run the message loop
     MSG msg = {0};
