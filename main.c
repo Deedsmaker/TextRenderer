@@ -61,20 +61,21 @@ void DrawScreenBuffer(HDC hdc, ScreenBuffer* buffer, int x, int y)
     );
 }
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
+// int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
+int main()
 {
     // Register the window class
     const wchar_t CLASS_NAME[] = L"Direct Draw Window";
     
     WNDCLASS wc = {0};
     wc.lpfnWndProc = WindowProc;
-    wc.hInstance = hInstance;
+    wc.hInstance = 0;
     wc.lpszClassName = CLASS_NAME;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     
-    AttachConsole(ATTACH_PARENT_PROCESS);
-    //for printf to work
-    freopen("CONOUT$", "w", stdout);
+    // AttachConsole(ATTACH_PARENT_PROCESS);
+    // //for printf to work
+    // freopen("CONOUT$", "w", stdout);
     
     RegisterClass(&wc);
 
@@ -85,13 +86,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         L"Direct Drawing Example - Click or Press Keys!",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT, 800, 600,
-        NULL, NULL, hInstance, NULL
+        NULL, NULL, 0, NULL
     );
     
     // 3. Display the window
-    ShowWindow(hwnd, nCmdShow);
+    ShowWindow(hwnd, 1);
     
-    load_font();
+    // load_font();
     printf("SFD\n");
     
     // 4. Run the message loop
@@ -327,14 +328,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
         
         case WM_DESTROY:
-            if (g_screenBuffer) {
-                DestroyScreenBuffer(g_screenBuffer);
-                g_screenBuffer = NULL;
-            }
-            PostQuitMessage(0);
-            
             should_run = false;
-            return 0;
     }
     
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
