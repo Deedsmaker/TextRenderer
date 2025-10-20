@@ -73,9 +73,7 @@ int main()
     wc.lpszClassName = CLASS_NAME;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     
-    // AttachConsole(ATTACH_PARENT_PROCESS);
-    // //for printf to work
-    // freopen("CONOUT$", "w", stdout);
+    AttachConsole(ATTACH_PARENT_PROCESS); // With that console outputs work like an icecream.
     
     RegisterClass(&wc);
 
