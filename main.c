@@ -16,7 +16,7 @@ typedef struct {
     int width;
     int height;
     u32* pixels;
-} ScreenBuffer;
+} Screen_Buffer;
 DEFINE_ARRAY(Array_i32, i32);
 
 b32 should_run = true;
@@ -24,7 +24,7 @@ b32 should_run = true;
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 // Global screen buffer
-ScreenBuffer* g_screenBuffer = NULL;
+Screen_Buffer screen_buffer = {0};
 
 void load_font() {
     FT_Library font_library;
@@ -33,7 +33,7 @@ void load_font() {
 }
 
 // Draw the screen buffer to a device context
-void DrawScreenBuffer(HDC hdc, ScreenBuffer* buffer, int x, int y)
+void DrawScreenBuffer(HDC hdc, Screen_Buffer* buffer, int x, int y)
 {
     if (!buffer || !buffer->pixels) return;
     
@@ -105,16 +105,14 @@ int main()
         // Initial direct drawing
         HDC hdc = GetDC(hwnd);
         
-        for (i32 i = 0; i < (i32)(g_screenBuffer->height * 0.5f); i++) {
-            for (i32 j = 0; j < (i32)(g_screenBuffer->width * 0.5f); j++) {
-                g_screenBuffer->pixels[i * g_screenBuffer->width + j] = 0xffff0000;
+        for (i32 i = 0; i < (i32)(screen_buffer.height * 0.5f); i++) {
+            for (i32 j = 0; j < (i32)(screen_buffer.width * 0.5f); j++) {
+                screen_buffer.pixels[i * screen_buffer.width + j] = 0xffff0000;
             }
         }
         
         // Draw our screen buffer
-        if (g_screenBuffer) {
-            DrawScreenBuffer(hdc, g_screenBuffer, 0, 0);
-        }
+        DrawScreenBuffer(hdc, &screen_buffer, 0, 0);
         
         // Draw some info text
         // SetBkMode(hdc, TRANSPARENT);
@@ -126,20 +124,7 @@ int main()
     return 0;
 }
 
-
-// Destroy screen buffer
-void DestroyScreenBuffer(ScreenBuffer* buffer)
-{
-    if (buffer) {
-        if (buffer->pixels) {
-            free(buffer->pixels);
-        }
-        free(buffer);
-    }
-}
-
-// Clear screen buffer with specified color
-void ClearScreenBuffer(ScreenBuffer* buffer, u32 color)
+void ClearScreenBuffer(Screen_Buffer* buffer, u32 color)
 {
     if (!buffer || !buffer->pixels) return;
     
@@ -148,28 +133,19 @@ void ClearScreenBuffer(ScreenBuffer* buffer, u32 color)
     }
 }
 
-// Create a screen buffer
-ScreenBuffer* CreateScreenBuffer(int width, int height)
+void alloc_screen_buffer(Screen_Buffer *buffer, int width, int height)
 {
-    ScreenBuffer* buffer = (ScreenBuffer*)malloc(sizeof(ScreenBuffer));
-    if (!buffer) return NULL;
+    if (!buffer) return;
+    if (buffer->pixels) {
+        free(buffer->pixels);
+    }
     
     buffer->width = width;
     buffer->height = height;
-    buffer->pixels = (u32*)malloc(width * height * sizeof(u32));
-    
-    if (!buffer->pixels) {
-        free(buffer);
-        return NULL;
-    }
-    
-    // Initialize to black
-    ClearScreenBuffer(buffer, RGB(0, 0, 0));
-    return buffer;
+    buffer->pixels = (u32*)calloc(1, width * height * sizeof(u32));
 }
 
-// Set a pixel in the screen buffer
-void DrawPixel(ScreenBuffer* buffer, int x, int y, u32 color)
+void draw_pixel(Screen_Buffer* buffer, int x, int y, u32 color)
 {
     if (!buffer || !buffer->pixels) return;
     if (x < 0 || x >= buffer->width || y < 0 || y >= buffer->height) return;
@@ -177,8 +153,7 @@ void DrawPixel(ScreenBuffer* buffer, int x, int y, u32 color)
     buffer->pixels[y * buffer->width + x] = color;
 }
 
-// Fill buffer with random pixels
-void DrawRandomPixels(ScreenBuffer* buffer)
+void draw_random_pixel(Screen_Buffer* buffer)
 {
     if (!buffer) return;
     
@@ -186,12 +161,11 @@ void DrawRandomPixels(ScreenBuffer* buffer)
         int x = rand() % buffer->width;
         int y = rand() % buffer->height;
         u32 color = RGB(rand() % 256, rand() % 256, rand() % 256);
-        DrawPixel(buffer, x, y, color);
+        draw_pixel(buffer, x, y, color);
     }
 }
 
-// Draw a color gradient
-void DrawGradient(ScreenBuffer* buffer)
+void draw_gradient(Screen_Buffer* buffer)
 {
     if (!buffer) return;
     
@@ -200,7 +174,7 @@ void DrawGradient(ScreenBuffer* buffer)
             BYTE r = (BYTE)((x * 255) / buffer->width);
             BYTE g = (BYTE)((y * 255) / buffer->height);
             BYTE b = (BYTE)(((x + y) * 255) / (buffer->width + buffer->height));
-            DrawPixel(buffer, x, y, RGB(r, g, b));
+            draw_pixel(buffer, x, y, RGB(r, g, b));
         }
     }
 }
@@ -211,33 +185,22 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         case WM_CREATE:
         {
-            // Create screen buffer when window is created
             RECT rect;
             GetClientRect(hwnd, &rect);
-            g_screenBuffer = CreateScreenBuffer(rect.right, rect.bottom);
+            alloc_screen_buffer(&screen_buffer, rect.right, rect.bottom);
             
-            // Draw initial content
-            if (g_screenBuffer) {
-                DrawGradient(g_screenBuffer);
-            }
+            draw_gradient(&screen_buffer);
         }
         break;
         
         case WM_SIZE:
         {
-            // Resize screen buffer when window is resized
-            if (g_screenBuffer) {
-                DestroyScreenBuffer(g_screenBuffer);
-            }
-            
             int width = LOWORD(lParam);
             int height = HIWORD(lParam);
-            g_screenBuffer = CreateScreenBuffer(width, height);
+            alloc_screen_buffer(&screen_buffer, width, height);
             
-            if (g_screenBuffer) {
-                DrawGradient(g_screenBuffer);
-                InvalidateRect(hwnd, NULL, FALSE);
-            }
+            draw_gradient(&screen_buffer);
+            InvalidateRect(hwnd, NULL, FALSE);
         }
         break;
         
@@ -249,8 +212,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         
         case WM_LBUTTONDOWN:
         {
-            if (!g_screenBuffer) break;
-            
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
             
@@ -260,9 +221,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                     if (dx*dx + dy*dy <= 20*20) {
                         int px = x + dx;
                         int py = y + dy;
-                        if (px >= 0 && px < g_screenBuffer->width && 
-                            py >= 0 && py < g_screenBuffer->height) {
-                            DrawPixel(g_screenBuffer, px, py, RGB(255, 0, 0));
+                        if (px >= 0 && px < screen_buffer.width && 
+                            py >= 0 && py < screen_buffer.height) {
+                            draw_pixel(&screen_buffer, px, py, RGB(255, 0, 0));
                         }
                     }
                 }
@@ -275,40 +236,36 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         
         case WM_KEYDOWN:
         {
-            if (!g_screenBuffer) break;
-            
             switch (wParam)
             {
                 case 'R':
-                    DrawRandomPixels(g_screenBuffer);
+                    draw_random_pixel(&screen_buffer);
                     break;
                     
                 case 'G':
-                    DrawGradient(g_screenBuffer);
+                    draw_gradient(&screen_buffer);
                     break;
                     
                 case 'C':
-                    ClearScreenBuffer(g_screenBuffer, RGB(0, 0, 0));
+                    ClearScreenBuffer(&screen_buffer, RGB(0, 0, 0));
                     break;
                     
                 case 'B':
-                    // Draw bouncing ball animation
                     for (int frame = 0; frame < 100; frame++) {
-                        ClearScreenBuffer(g_screenBuffer, RGB(0, 0, 0));
+                        ClearScreenBuffer(&screen_buffer, RGB(0, 0, 0));
                         
-                        int ballX = (frame * 10) % g_screenBuffer->width;
-                        int ballY = (g_screenBuffer->height / 2) + 
+                        int ballX = (frame * 10) % screen_buffer.width;
+                        int ballY = (screen_buffer.height / 2) + 
                                    (int)(sin(frame * 0.1) * 100);
                         
-                        // Draw ball
                         for (int dy = -10; dy <= 10; dy++) {
                             for (int dx = -10; dx <= 10; dx++) {
                                 if (dx*dx + dy*dy <= 10*10) {
                                     int px = ballX + dx;
                                     int py = ballY + dy;
-                                    if (px >= 0 && px < g_screenBuffer->width && 
-                                        py >= 0 && py < g_screenBuffer->height) {
-                                        DrawPixel(g_screenBuffer, px, py, RGB(0, 255, 0));
+                                    if (px >= 0 && px < screen_buffer.width && 
+                                        py >= 0 && py < screen_buffer.height) {
+                                        draw_pixel(&screen_buffer, px, py, RGB(0, 255, 0));
                                     }
                                 }
                             }
