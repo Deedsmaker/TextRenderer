@@ -26,10 +26,127 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 // Global screen buffer
 Screen_Buffer screen_buffer = {0};
 
-void load_font() {
-    FT_Library font_library;
-    FT_Init_FreeType(&font_library);
-    printf("Font inited.\n");
+
+void draw_pixel(Screen_Buffer* buffer, int x, int y, u32 color)
+{
+    if (!buffer || !buffer->pixels) return;
+    if (x < 0 || x >= buffer->width || y < 0 || y >= buffer->height) return;
+    
+    buffer->pixels[y * buffer->width + x] = color;
+}
+
+void draw_bitmap(Screen_Buffer *buffer, FT_Bitmap* bitmap, FT_Int x, FT_Int y)
+{
+  FT_Int  i, j, p, q;
+  FT_Int  x_max = x + bitmap->width;
+  FT_Int  y_max = y + bitmap->rows;
+
+  /* for simplicity, we assume that `bitmap->pixel_mode' */
+  /* is `FT_PIXEL_MODE_GRAY' (i.e., not a bitmap font)   */
+
+  for ( i = x, p = 0; i < x_max; i++, p++ )
+  {
+    for ( j = y, q = 0; j < y_max; j++, q++ )
+    {
+      if ( i < 0      || j < 0       ||
+           i >= buffer->width || j >= buffer->height )
+        continue;
+        
+        // buffer->pixels[j][i] |= bitmap->buffer[q * bitmap->width + p];
+        draw_pixel(buffer, i, j, bitmap->buffer[q * bitmap->width + p]);
+    }
+  }
+}
+
+
+// void show_image( Screen_Buffer *buffer )
+// {
+//   int  i, j;
+
+
+//   for ( i = 0; i < buffer->height; i++ )
+//   {
+//     for ( j = 0; j < buffer->width; j++ )
+//       putchar( buffer->pixels[i][j] == 0 ? ' '
+//                                 : buffer->pixels[i][j] < 128 ? '+'
+//                                                     : '*' );
+//     putchar( '\n' );
+//   }
+// }
+
+void do_the_thing1(Screen_Buffer *buffer) {
+    FT_Library    library;
+    FT_Face       face;
+    
+    FT_GlyphSlot  slot;
+    FT_Matrix     matrix;                 /* transformation matrix */
+    FT_Vector     pen;                    /* untransformed origin  */
+    FT_Error      error;
+    
+    char*         filename;
+    char*         text;
+    
+    double        angle;
+    int           target_height;
+    int           n, num_chars;
+    
+    
+    filename      = "../MonospaceBold.ttf";
+    text          = "Some real and real text.";
+    num_chars     = strlen( text );
+    angle         = ( 25.0 / 360 ) * 3.14159 * 2;      /* use 25 degrees     */
+    target_height = buffer->height;
+    
+    error = FT_Init_FreeType( &library );              /* initialize library */
+    /* error handling omitted */
+    
+    error = FT_New_Face( library, filename, 0, &face );/* create face object */
+    /* error handling omitted */
+    
+    /* use 50pt at 100dpi */
+    error = FT_Set_Char_Size( face, 50 * 64, 0,
+                            100, 0 );                /* set character size */
+    /* error handling omitted */
+    
+    /* cmap selection omitted;                                        */
+    /* for simplicity we assume that the font contains a Unicode cmap */
+    
+    slot = face->glyph;
+    
+    /* set up matrix */
+    matrix.xx = (FT_Fixed)( cos( angle ) * 0x10000L );
+    matrix.xy = (FT_Fixed)(-sin( angle ) * 0x10000L );
+    matrix.yx = (FT_Fixed)( sin( angle ) * 0x10000L );
+    matrix.yy = (FT_Fixed)( cos( angle ) * 0x10000L );
+    
+    /* the pen position in 26.6 cartesian space coordinates; */
+    /* start at (300,200) relative to the upper left corner  */
+    pen.x = 300 * 64;
+    pen.y = ( target_height - 200 ) * 64;
+    
+    for ( n = 0; n < num_chars; n++ ) {
+    /* set transformation */
+    FT_Set_Transform( face, &matrix, &pen );
+    
+    /* load glyph buffer->pixels into the slot (erase previous one) */
+    error = FT_Load_Char( face, text[n], FT_LOAD_RENDER );
+    if ( error )
+      continue;                 /* ignore errors */
+    
+    /* now, draw to our target surface (convert position) */
+    draw_bitmap( buffer, &slot->bitmap,
+                 slot->bitmap_left,
+                 target_height - slot->bitmap_top );
+    
+    /* increment pen position */
+    pen.x += slot->advance.x;
+    pen.y += slot->advance.y;
+    }
+    
+    // show_image();
+    
+    FT_Done_Face    ( face );
+    FT_Done_FreeType( library );
 }
 
 // Draw the screen buffer to a device context
@@ -88,9 +205,6 @@ int main()
     
     ShowWindow(hwnd, 1);
     
-    load_font();
-    
-    // 4. Run the message loop
     MSG msg = {0};
     while (should_run) {
         while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -102,11 +216,13 @@ int main()
         // Initial direct drawing
         HDC hdc = GetDC(hwnd);
         
-        for (i32 i = 0; i < (i32)(screen_buffer.height * 0.5f); i++) {
-            for (i32 j = 0; j < (i32)(screen_buffer.width * 0.5f); j++) {
-                screen_buffer.pixels[i * screen_buffer.width + j] = 0xffff0000;
-            }
-        }
+        // for (i32 i = 0; i < (i32)(screen_buffer.height * 0.5f); i++) {
+        //     for (i32 j = 0; j < (i32)(screen_buffer.width * 0.5f); j++) {
+        //         screen_buffer.pixels[i * screen_buffer.width + j] = 0xffff0000;
+        //     }
+        // }
+        
+        do_the_thing1(&screen_buffer);
         
         // Draw our screen buffer
         DrawScreenBuffer(hdc, &screen_buffer, 0, 0);
@@ -140,14 +256,6 @@ void alloc_screen_buffer(Screen_Buffer *buffer, int width, int height)
     buffer->width = width;
     buffer->height = height;
     buffer->pixels = (u32*)calloc(1, width * height * sizeof(u32));
-}
-
-void draw_pixel(Screen_Buffer* buffer, int x, int y, u32 color)
-{
-    if (!buffer || !buffer->pixels) return;
-    if (x < 0 || x >= buffer->width || y < 0 || y >= buffer->height) return;
-    
-    buffer->pixels[y * buffer->width + x] = color;
 }
 
 void draw_random_pixel(Screen_Buffer* buffer)
@@ -207,7 +315,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         break;
         
-        case WM_LBUTTONDOWN:
+        case WM_LBUTTONDOWN: 
         {
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
