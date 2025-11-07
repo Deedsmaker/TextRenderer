@@ -29,7 +29,7 @@ Screen_Buffer screen_buffer = {0};
 void load_font() {
     FT_Library font_library;
     FT_Init_FreeType(&font_library);
-    printf("real\n");
+    printf("Font inited.\n");
 }
 
 // Draw the screen buffer to a device context
@@ -77,7 +77,6 @@ int main()
     
     RegisterClass(&wc);
 
-    // Create the window
     HWND hwnd = CreateWindowEx(
         0,
         CLASS_NAME,
@@ -87,11 +86,9 @@ int main()
         NULL, NULL, 0, NULL
     );
     
-    // 3. Display the window
     ShowWindow(hwnd, 1);
     
-    // load_font();
-    printf("SFD\n");
+    load_font();
     
     // 4. Run the message loop
     MSG msg = {0};
@@ -171,9 +168,9 @@ void draw_gradient(Screen_Buffer* buffer)
     
     for (int y = 0; y < buffer->height; y++) {
         for (int x = 0; x < buffer->width; x++) {
-            BYTE r = (BYTE)((x * 255) / buffer->width);
-            BYTE g = (BYTE)((y * 255) / buffer->height);
-            BYTE b = (BYTE)(((x + y) * 255) / (buffer->width + buffer->height));
+            u8 r = (u8)((x * 255) / buffer->width);
+            u8 g = (u8)((y * 255) / buffer->height);
+            u8 b = (u8)(((x + y) * 255) / (buffer->width + buffer->height));
             draw_pixel(buffer, x, y, RGB(r, g, b));
         }
     }
