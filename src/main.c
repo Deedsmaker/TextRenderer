@@ -58,97 +58,6 @@ void draw_bitmap(Screen_Buffer *buffer, FT_Bitmap* bitmap, FT_Int x, FT_Int y)
   }
 }
 
-
-// void show_image( Screen_Buffer *buffer )
-// {
-//   int  i, j;
-
-
-//   for ( i = 0; i < buffer->height; i++ )
-//   {
-//     for ( j = 0; j < buffer->width; j++ )
-//       putchar( buffer->pixels[i][j] == 0 ? ' '
-//                                 : buffer->pixels[i][j] < 128 ? '+'
-//                                                     : '*' );
-//     putchar( '\n' );
-//   }
-// }
-
-void do_the_thing1(Screen_Buffer *buffer) {
-    FT_Library    library;
-    FT_Face       face;
-    
-    FT_GlyphSlot  slot;
-    FT_Matrix     matrix;                 /* transformation matrix */
-    FT_Vector     pen;                    /* untransformed origin  */
-    FT_Error      error;
-    
-    char*         filename;
-    char*         text;
-    
-    double        angle;
-    int           target_height;
-    int           n, num_chars;
-    
-    
-    filename      = "../MonospaceBold.ttf";
-    text          = "Some real and real text.";
-    num_chars     = strlen( text );
-    angle         = ( 25.0 / 360 ) * 3.14159 * 2;      /* use 25 degrees     */
-    target_height = buffer->height;
-    
-    error = FT_Init_FreeType( &library );              /* initialize library */
-    /* error handling omitted */
-    
-    error = FT_New_Face( library, filename, 0, &face );/* create face object */
-    /* error handling omitted */
-    
-    /* use 50pt at 100dpi */
-    error = FT_Set_Char_Size( face, 50 * 64, 0,
-                            100, 0 );                /* set character size */
-    /* error handling omitted */
-    
-    /* cmap selection omitted;                                        */
-    /* for simplicity we assume that the font contains a Unicode cmap */
-    
-    slot = face->glyph;
-    
-    /* set up matrix */
-    matrix.xx = (FT_Fixed)( cos( angle ) * 0x10000L );
-    matrix.xy = (FT_Fixed)(-sin( angle ) * 0x10000L );
-    matrix.yx = (FT_Fixed)( sin( angle ) * 0x10000L );
-    matrix.yy = (FT_Fixed)( cos( angle ) * 0x10000L );
-    
-    /* the pen position in 26.6 cartesian space coordinates; */
-    /* start at (300,200) relative to the upper left corner  */
-    pen.x = 300 * 64;
-    pen.y = ( target_height - 200 ) * 64;
-    
-    for ( n = 0; n < num_chars; n++ ) {
-    /* set transformation */
-    FT_Set_Transform( face, &matrix, &pen );
-    
-    /* load glyph buffer->pixels into the slot (erase previous one) */
-    error = FT_Load_Char( face, text[n], FT_LOAD_RENDER );
-    if ( error )
-      continue;                 /* ignore errors */
-    
-    /* now, draw to our target surface (convert position) */
-    draw_bitmap( buffer, &slot->bitmap,
-                 slot->bitmap_left,
-                 target_height - slot->bitmap_top );
-    
-    /* increment pen position */
-    pen.x += slot->advance.x;
-    pen.y += slot->advance.y;
-    }
-    
-    // show_image();
-    
-    FT_Done_Face    ( face );
-    FT_Done_FreeType( library );
-}
-
 // Draw the screen buffer to a device context
 void DrawScreenBuffer(HDC hdc, Screen_Buffer* buffer, int x, int y)
 {
@@ -176,6 +85,58 @@ void DrawScreenBuffer(HDC hdc, Screen_Buffer* buffer, int x, int y)
         &bmi,                    // Bitmap info
         DIB_RGB_COLORS           // Color table type
     );
+}
+
+void draw_text() {
+    // Load font
+    FT_Library ft;
+    FT_Face face;
+    FT_Init_FreeType(&ft);
+    FT_New_Face(ft, "../MonospaceBold.ttf", 0, &face);
+    FT_Set_Pixel_Sizes(face, 0, 24);  // 48px height
+    
+    // For each character in your string
+    const char* text = "Hello FreeType.ru";
+    int pen_x = 100, pen_y = 200;  // baseline position
+        
+    for (; *text; text++) {
+        FT_Load_Char(face, *text, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT);
+        FT_GlyphSlot glyph = face->glyph;
+    
+        FT_Bitmap* bmp = &glyph->bitmap;
+    
+        for (int y = 0; y < bmp->rows; y++) {
+            for (int x = 0; x < bmp->width; x++) {
+                int px = pen_x + glyph->bitmap_left + x;
+                int py = pen_y - glyph->bitmap_top + y;
+    
+                if (px >= 0 && px < screen_buffer.width &&
+                    py >= 0 && py < screen_buffer.height) {
+                    unsigned char alpha = bmp->buffer[y * bmp->pitch + x];
+                    u32* dst = &screen_buffer.pixels[py * screen_buffer.width + px];
+                    // Simple alpha blend over black background
+                    if (alpha) {
+                        // *dst = 0xFFFFFF | (alpha << 24);
+                        // Color blending.
+                        u32 bg = *dst;
+                        u32 fg = 0xFFFFFF;
+                        int a = alpha;
+                        int inv = 255 - a;
+                        *dst = (((fg & 0xFF) * a + (bg & 0xFF) * inv) >> 8) |
+                               (((fg >> 8 & 0xFF) * a + (bg >> 8 & 0xFF) * inv) >> 8) << 8 |
+                               (((fg >> 16 & 0xFF) * a + (bg >> 16 & 0xFF) * inv) >> 8) << 16 |
+                               a << 24;
+                    }
+                }
+            }
+        }
+    
+        pen_x += glyph->advance.x >> 6;  // advance is in 1/64px
+    }
+    
+    // Cleanup
+    FT_Done_Face(face);
+    FT_Done_FreeType(ft);
 }
 
 // int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
@@ -222,7 +183,8 @@ int main()
         //     }
         // }
         
-        do_the_thing1(&screen_buffer);
+        // do_the_thing1(&screen_buffer);
+        draw_text();
         
         // Draw our screen buffer
         DrawScreenBuffer(hdc, &screen_buffer, 0, 0);
