@@ -13,8 +13,8 @@
 #include "CArray.c"
 
 typedef struct {
-    int width;
-    int height;
+    i32 width;
+    i32 height;
     u32* pixels;
 } Screen_Buffer;
 DEFINE_ARRAY(Array_i32, i32);
@@ -27,7 +27,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 Screen_Buffer screen_buffer = {0};
 
 
-void draw_pixel(Screen_Buffer* buffer, int x, int y, u32 color)
+void draw_pixel(Screen_Buffer* buffer, i32 x, i32 y, u32 color)
 {
     if (!buffer || !buffer->pixels) return;
     if (x < 0 || x >= buffer->width || y < 0 || y >= buffer->height) return;
@@ -59,7 +59,7 @@ void draw_bitmap(Screen_Buffer *buffer, FT_Bitmap* bitmap, FT_Int x, FT_Int y)
 }
 
 // Draw the screen buffer to a device context
-void DrawScreenBuffer(HDC hdc, Screen_Buffer* buffer, int x, int y)
+void DrawScreenBuffer(HDC hdc, Screen_Buffer* buffer, i32 x, i32 y)
 {
     if (!buffer || !buffer->pixels) return;
     
@@ -92,12 +92,12 @@ void draw_text() {
     FT_Library ft;
     FT_Face face;
     FT_Init_FreeType(&ft);
-    FT_New_Face(ft, "../MonospaceBold.ttf", 0, &face);
-    FT_Set_Pixel_Sizes(face, 0, 24);  // 48px height
+    FT_New_Face(ft, "../SpaceMono-Regular.ttf", 0, &face);
+    FT_Set_Pixel_Sizes(face, 0, 36);  // 48px height
     
     // For each character in your string
-    const char* text = "Hello FreeType.ru";
-    int pen_x = 100, pen_y = 200;  // baseline position
+    const char* text = "Whereas disregard and ";
+    i32 pen_x = 100, pen_y = 200;  // baseline position
         
     for (; *text; text++) {
         FT_Load_Char(face, *text, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT);
@@ -105,10 +105,10 @@ void draw_text() {
     
         FT_Bitmap* bmp = &glyph->bitmap;
     
-        for (int y = 0; y < bmp->rows; y++) {
-            for (int x = 0; x < bmp->width; x++) {
-                int px = pen_x + glyph->bitmap_left + x;
-                int py = pen_y - glyph->bitmap_top + y;
+        for (i32 y = 0; y < bmp->rows; y++) {
+            for (i32 x = 0; x < bmp->width; x++) {
+                i32 px = pen_x + glyph->bitmap_left + x;
+                i32 py = pen_y - glyph->bitmap_top + y;
     
                 if (px >= 0 && px < screen_buffer.width &&
                     py >= 0 && py < screen_buffer.height) {
@@ -120,8 +120,8 @@ void draw_text() {
                         // Color blending.
                         u32 bg = *dst;
                         u32 fg = 0xFFFFFF;
-                        int a = alpha;
-                        int inv = 255 - a;
+                        i32 a = alpha;
+                        i32 inv = 255 - a;
                         *dst = (((fg & 0xFF) * a + (bg & 0xFF) * inv) >> 8) |
                                (((fg >> 8 & 0xFF) * a + (bg >> 8 & 0xFF) * inv) >> 8) << 8 |
                                (((fg >> 16 & 0xFF) * a + (bg >> 16 & 0xFF) * inv) >> 8) << 16 |
@@ -139,8 +139,8 @@ void draw_text() {
     FT_Done_FreeType(ft);
 }
 
-// int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
-int main()
+// i32 WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, i32 nCmdShow)
+i32 main()
 {
     // Register the window class
     const wchar_t CLASS_NAME[] = L"Direct Draw Window";
@@ -203,12 +203,12 @@ void ClearScreenBuffer(Screen_Buffer* buffer, u32 color)
 {
     if (!buffer || !buffer->pixels) return;
     
-    for (int i = 0; i < buffer->width * buffer->height; i++) {
+    for (i32 i = 0; i < buffer->width * buffer->height; i++) {
         buffer->pixels[i] = color;
     }
 }
 
-void alloc_screen_buffer(Screen_Buffer *buffer, int width, int height)
+void alloc_screen_buffer(Screen_Buffer *buffer, i32 width, i32 height)
 {
     if (!buffer) return;
     if (buffer->pixels) {
@@ -224,9 +224,9 @@ void draw_random_pixel(Screen_Buffer* buffer)
 {
     if (!buffer) return;
     
-    for (int i = 0; i < 10000; i++) {
-        int x = rand() % buffer->width;
-        int y = rand() % buffer->height;
+    for (i32 i = 0; i < 10000; i++) {
+        i32 x = rand() % buffer->width;
+        i32 y = rand() % buffer->height;
         u32 color = RGB(rand() % 256, rand() % 256, rand() % 256);
         draw_pixel(buffer, x, y, color);
     }
@@ -236,8 +236,8 @@ void draw_gradient(Screen_Buffer* buffer)
 {
     if (!buffer) return;
     
-    for (int y = 0; y < buffer->height; y++) {
-        for (int x = 0; x < buffer->width; x++) {
+    for (i32 y = 0; y < buffer->height; y++) {
+        for (i32 x = 0; x < buffer->width; x++) {
             u8 r = (u8)((x * 255) / buffer->width);
             u8 g = (u8)((y * 255) / buffer->height);
             u8 b = (u8)(((x + y) * 255) / (buffer->width + buffer->height));
@@ -262,8 +262,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         
         case WM_SIZE:
         {
-            int width = LOWORD(lParam);
-            int height = HIWORD(lParam);
+            i32 width = LOWORD(lParam);
+            i32 height = HIWORD(lParam);
             alloc_screen_buffer(&screen_buffer, width, height);
             
             draw_gradient(&screen_buffer);
@@ -279,15 +279,15 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         
         case WM_LBUTTONDOWN: 
         {
-            int x = LOWORD(lParam);
-            int y = HIWORD(lParam);
+            i32 x = LOWORD(lParam);
+            i32 y = HIWORD(lParam);
             
             // Draw a circle at click position
-            for (int dy = -20; dy <= 20; dy++) {
-                for (int dx = -20; dx <= 20; dx++) {
+            for (i32 dy = -20; dy <= 20; dy++) {
+                for (i32 dx = -20; dx <= 20; dx++) {
                     if (dx*dx + dy*dy <= 20*20) {
-                        int px = x + dx;
-                        int py = y + dy;
+                        i32 px = x + dx;
+                        i32 py = y + dy;
                         if (px >= 0 && px < screen_buffer.width && 
                             py >= 0 && py < screen_buffer.height) {
                             draw_pixel(&screen_buffer, px, py, RGB(255, 0, 0));
@@ -318,18 +318,18 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                     break;
                     
                 case 'B':
-                    for (int frame = 0; frame < 100; frame++) {
+                    for (i32 frame = 0; frame < 100; frame++) {
                         ClearScreenBuffer(&screen_buffer, RGB(0, 0, 0));
                         
-                        int ballX = (frame * 10) % screen_buffer.width;
-                        int ballY = (screen_buffer.height / 2) + 
-                                   (int)(sin(frame * 0.1) * 100);
+                        i32 ballX = (frame * 10) % screen_buffer.width;
+                        i32 ballY = (screen_buffer.height / 2) + 
+                                   (i32)(sin(frame * 0.1) * 100);
                         
-                        for (int dy = -10; dy <= 10; dy++) {
-                            for (int dx = -10; dx <= 10; dx++) {
+                        for (i32 dy = -10; dy <= 10; dy++) {
+                            for (i32 dx = -10; dx <= 10; dx++) {
                                 if (dx*dx + dy*dy <= 10*10) {
-                                    int px = ballX + dx;
-                                    int py = ballY + dy;
+                                    i32 px = ballX + dx;
+                                    i32 py = ballY + dy;
                                     if (px >= 0 && px < screen_buffer.width && 
                                         py >= 0 && py < screen_buffer.height) {
                                         draw_pixel(&screen_buffer, px, py, RGB(0, 255, 0));
