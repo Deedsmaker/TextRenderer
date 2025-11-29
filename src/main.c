@@ -140,7 +140,7 @@ i32 main()
         // Initial direct drawing
         HDC hdc = GetDC(hwnd);
         
-        render_text_ft(&screen_buffer, "Привет 228\nHello my man!", 100, 100, 0x00FFFFFF); 
+        render_text_ft(&screen_buffer, "Привет 228\nHello my man!", 100, 100, (i32)(0x00FFFFFF)); 
         
         // Draw our screen buffer
         DrawScreenBuffer(hdc, &screen_buffer, 0, 0);
@@ -194,10 +194,11 @@ void draw_gradient(Screen_Buffer* buffer)
     
     for (i32 y = 0; y < buffer->height; y++) {
         for (i32 x = 0; x < buffer->width; x++) {
-            u8 r = (u8)((x * 255) / buffer->width);
-            u8 g = (u8)((y * 255) / buffer->height);
-            u8 b = (u8)(((x + y) * 255) / (buffer->width + buffer->height));
-            draw_pixel(buffer, x, y, RGB(r, g, b));
+            // u8 r = (u8)((x * 255) / buffer->width);
+            // u8 g = (u8)((y * 255) / buffer->height);
+            // u8 b = (u8)(((x + y) * 255) / (buffer->width + buffer->height));
+            // draw_pixel(buffer, x, y, RGB(r, g, b));
+            draw_pixel(buffer, x, y, 0xFF242731);
         }
     }
 }
