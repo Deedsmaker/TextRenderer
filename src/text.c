@@ -54,8 +54,11 @@ void render_text_ft(Screen_Buffer* sb, const char *text, int x, int y, u32 color
         FT_Bitmap* bmp = &g->bitmap;
 
         if (codepoint == '\n') {
-            pen_y += font_size * 2;
+            pen_y += font_size * 1.4f;
             pen_x = x;
+        }
+        if (codepoint == '\t') {
+            pen_x += font_size;
         }
         
         if (codepoint == '\n' || codepoint == '\t') continue;
