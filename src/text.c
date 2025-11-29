@@ -3,15 +3,17 @@
 FT_Library ft;
 FT_Face face;
 
+i32 font_size = 24;
+
 void init_freetype() {
     FT_Init_FreeType(&ft);
     FT_New_Face(ft, "../SpaceMono-Regular.ttf", 0, &face);
-    FT_Set_Pixel_Sizes(face, 48, 48);
+    FT_Set_Pixel_Sizes(face, 0, font_size);
 }
 
 void free_font() {
     // Cleanup
-    // FT_Done_Face(face);
+    FT_Done_Face(face);
     // FT_Done_FreeType(ft);
 }
 
