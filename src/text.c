@@ -1,5 +1,7 @@
 #pragma once
 
+#include "freetype/ftlcdfil.h"
+
 FT_Library ft;
 FT_Face face;
 
@@ -7,6 +9,7 @@ i32 font_size = 22;
 
 void init_freetype() {
     FT_Init_FreeType(&ft);
+    FT_Library_SetLcdFilter(ft, FT_LCD_FILTER_DEFAULT);
     if (FT_New_Face(ft, "../Nunito-Light.ttf", 0, &face) != 0) {
         printf("Font does not contains UNICODE characters?\n");
     }
@@ -58,7 +61,7 @@ void render_text_ft(Screen_Buffer* sb, const char *text, int x, int y, u32 color
         
         // Skip newlines/tabs (do this BEFORE loading glyph!)
         if (codepoint == '\n') {
-            pen_y += font_size * 2 * 1.4f;
+            pen_y += font_size * 1.4f;
             pen_x = x;
             continue;
         }
@@ -93,6 +96,78 @@ void render_text_ft(Screen_Buffer* sb, const char *text, int x, int y, u32 color
             }
         }
         
+        pen_x += g->advance.x >> 6;
+    }
+}
+
+void render_text_lcd(Screen_Buffer* sb, const char *text, int x, int y, u32 color)
+{
+    int pen_x = x;
+    int pen_y = y;
+
+    const char *p = text;
+    while (*text) {
+        u32 codepoint = decode_utf8(&text);
+        
+        if (codepoint < 32 && codepoint != '\n' && codepoint != '\t') continue;
+        
+        FT_UInt glyph_index = FT_Get_Char_Index(face, codepoint);
+        if (glyph_index == 0) { 
+            glyph_index = FT_Get_Char_Index(face, 0xFFFD);
+        }
+        
+        i32 flags = FT_LOAD_RENDER | FT_LOAD_TARGET_LCD | FT_LOAD_TARGET_LIGHT | FT_LOAD_FORCE_AUTOHINT;
+        
+        if (FT_Load_Glyph(face, glyph_index, flags) != 0) {
+            FT_Load_Glyph(face, 0xFFFD, flags);
+        }
+
+        FT_GlyphSlot g = face->glyph;
+        FT_Bitmap* bmp = &g->bitmap;
+
+        if (codepoint == '\n') {
+            pen_y += font_size * 1.4f;
+            pen_x = x;
+        }
+        if (codepoint == '\t') {
+            pen_x += font_size;
+        }
+        
+        if (codepoint == '\n' || codepoint == '\t') continue;
+
+        int gx = pen_x + g->bitmap_left;
+        int gy = pen_y - g->bitmap_top;
+
+        for (int py = 0; py < bmp->rows; ++py) {
+            int sy = gy + py;
+            if (sy < 0 || sy >= sb->height) continue;
+
+            for (int px = 0; px < bmp->width / 3; ++px) {
+                int sx = gx + px;
+                if (sx < 0 || sx >= sb->width) continue;
+
+                unsigned char* src = bmp->buffer + py * bmp->pitch + px * 3;
+                int r = src[0];
+                int g = src[1];
+                int b = src[2];
+
+                if (r == 0 && g == 0 && b == 0) continue;
+
+                u32* dst = &sb->pixels[sy * sb->width + sx];
+                u32 bg = *dst;
+
+                int fg_r = (color >> 16) & 0xFF;
+                int fg_g = (color >>  8) & 0xFF;
+                int fg_b = (color      ) & 0xFF;
+
+                int out_r = (fg_r * r + ((bg >> 16) & 0xFF) * (255 - r)) / 255;
+                int out_g = (fg_g * g + ((bg >>  8) & 0xFF) * (255 - g)) / 255;
+                int out_b = (fg_b * b + ((bg      ) & 0xFF) * (255 - b)) / 255;
+
+                *dst = 0xFF000000 | (out_r << 16) | (out_g << 8) | out_b;
+            }
+        }
+
         pen_x += g->advance.x >> 6;
     }
 }
