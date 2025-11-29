@@ -3,11 +3,11 @@
 FT_Library ft;
 FT_Face face;
 
-i32 font_size = 24;
+i32 font_size = 22;
 
 void init_freetype() {
     FT_Init_FreeType(&ft);
-    if (FT_New_Face(ft, "../Nunito-Regular.ttf", 0, &face) != 0) {
+    if (FT_New_Face(ft, "../Nunito-Light.ttf", 0, &face) != 0) {
         printf("Font does not contains UNICODE characters?\n");
     }
     FT_Set_Pixel_Sizes(face, 0, font_size);
