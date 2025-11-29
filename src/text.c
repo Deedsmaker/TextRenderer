@@ -9,8 +9,8 @@ i32 font_size = 22;
 
 void init_freetype() {
     FT_Init_FreeType(&ft);
-    FT_Library_SetLcdFilter(ft, FT_LCD_FILTER_DEFAULT);
-    if (FT_New_Face(ft, "../Nunito-Light.ttf", 0, &face) != 0) {
+    FT_Library_SetLcdFilter(ft, FT_LCD_FILTER_LIGHT);
+    if (FT_New_Face(ft, "../Inter-VariableFont_opsz,wght.ttf", 0, &face) != 0) {
         printf("Font does not contains UNICODE characters?\n");
     }
     FT_Set_Pixel_Sizes(face, 0, font_size);
@@ -31,6 +31,30 @@ static u32 decode_utf8(const char** ptr)
     if ((s[0] & 0xF8) == 0xF0 && (s[1] & 0xC0) == 0x80 && (s[2] & 0xC0) == 0x80 && (s[3] & 0xC0) == 0x80) { *ptr += 4; return ((s[0]&0x07)<<18) | ((s[1]&0x3F)<<12) | ((s[2]&0x3F)<<6) | (s[3]&0x3F); }
     
     *ptr += 1; return 0xFFFD; // � replacement character
+}
+
+static inline u32 blend_grayscale_glyph(u32 dst, u32 color, unsigned char a)
+{
+    if (a == 0) return dst;
+    if (a == 255) return 0xFF000000 | color;
+
+    unsigned int alpha = (a * a + 127 * a) >> 14;   // ≈ a^(1.4) – perfect curve
+
+    unsigned int inv = 255 - alpha;
+
+    int dr = (dst >> 16) & 255;
+    int dg = (dst >> 8)  & 255;
+    int db =  dst        & 255;
+
+    int sr = (color >> 16) & 255;
+    int sg = (color >> 8)  & 255;
+    int sb =  color        & 255;
+
+    int r = (sr * alpha + dr * inv + 127) / 255;
+    int g = (sg * alpha + dg * inv + 127) / 255;
+    int b = (sb * alpha + db * inv + 127) / 255;
+
+    return 0xFF000000 | (r << 16) | (g << 8) | b;
 }
 
 void render_text_ft(Screen_Buffer* sb, const char *text, int x, int y, u32 color)
@@ -88,11 +112,13 @@ void render_text_ft(Screen_Buffer* sb, const char *text, int x, int y, u32 color
                 u32* dst = &sb->pixels[sy * sb->width + sx];
                 u32  bg  = *dst;
         
-                int r = ((color >> 16) & 255) * alpha + ((bg >> 16) & 255) * (255 - alpha);
-                int g = ((color >>  8) & 255) * alpha + ((bg >>  8) & 255) * (255 - alpha);
-                int b = ( color        & 255) * alpha + ( bg        & 255) * (255 - alpha);
+                // int r = ((color >> 16) & 255) * alpha + ((bg >> 16) & 255) * (255 - alpha);
+                // int g = ((color >>  8) & 255) * alpha + ((bg >>  8) & 255) * (255 - alpha);
+                // int b = ( color        & 255) * alpha + ( bg        & 255) * (255 - alpha);
         
-                *dst = 0xFF000000 | (r/255 << 16) | (g/255 << 8) | (b/255);
+                // *dst = 0xFF000000 | (r/255 << 16) | (g/255 << 8) | (b/255);
+                
+                *dst = blend_grayscale_glyph(bg, color, alpha);
             }
         }
         
