@@ -22,9 +22,9 @@ void free_font() {
     // FT_Done_FreeType(ft);
 }
 
-static u32 decode_utf8(const char** ptr)
+static inline u32 decode_utf8(const char** ptr)
 {
-    const unsigned char* s = (const unsigned char*)*ptr;
+    const u8* s = (const u8*)*ptr;
     if (s[0] < 0x80) { *ptr += 1; return s[0]; }
     if ((s[0] & 0xE0) == 0xC0 && (s[1] & 0xC0) == 0x80) { *ptr += 2; return ((s[0]&0x1F)<<6) | (s[1]&0x3F); }
     if ((s[0] & 0xF0) == 0xE0 && (s[1] & 0xC0) == 0x80 && (s[2] & 0xC0) == 0x80) { *ptr += 3; return ((s[0]&0x0F)<<12) | ((s[1]&0x3F)<<6) | (s[2]&0x3F); }
@@ -33,12 +33,12 @@ static u32 decode_utf8(const char** ptr)
     *ptr += 1; return 0xFFFD; // � replacement character
 }
 
-static inline u32 blend_grayscale_glyph(u32 dst, u32 color, unsigned char a)
+static inline u32 blend_grayscale_glyph(u32 dst, u32 color, u8 bitmap_alpha)
 {
-    if (a == 0) return dst;
-    if (a == 255) return 0xFF000000 | color;
+    if (bitmap_alpha == 0) return dst;
+    if (bitmap_alpha == 255) return 0xFF000000 | color;
 
-    unsigned int alpha = (a * a + 127 * a) >> 14;   // ≈ a^(1.4) – perfect curve
+    unsigned int alpha = (bitmap_alpha * bitmap_alpha + 127 * bitmap_alpha) >> 14; // Approximately a^(1.4)
 
     unsigned int inv = 255 - alpha;
 
@@ -57,7 +57,7 @@ static inline u32 blend_grayscale_glyph(u32 dst, u32 color, unsigned char a)
     return 0xFF000000 | (r << 16) | (g << 8) | b;
 }
 
-void render_text_ft(Screen_Buffer* sb, const char *text, int x, int y, u32 color)
+void render_text_ft(Screen_Buffer* buffer, const char *text, int x, int y, u32 color)
 {
     int pen_x = x;
     int pen_y = y;
@@ -80,10 +80,9 @@ void render_text_ft(Screen_Buffer* sb, const char *text, int x, int y, u32 color
             FT_Load_Glyph(face, FT_Get_Char_Index(face, 0xFFFD), flags); // Fallback.
         }
         
-        FT_GlyphSlot g = face->glyph;
-        FT_Bitmap*   bmp = &g->bitmap;
+        FT_GlyphSlot glyph = face->glyph;
+        FT_Bitmap*   bitmap = &glyph->bitmap;
         
-        // Skip newlines/tabs (do this BEFORE loading glyph!)
         if (codepoint == '\n') {
             pen_y += font_size * 1.4f;
             pen_x = x;
@@ -94,106 +93,28 @@ void render_text_ft(Screen_Buffer* sb, const char *text, int x, int y, u32 color
             continue;
         }
         
-        int gx = pen_x + g->bitmap_left;
-        int gy = pen_y - g->bitmap_top;
+        int glyph_x = pen_x + glyph->bitmap_left;
+        int glyph_y = pen_y - glyph->bitmap_top;
         
-        for (int py = 0; py < bmp->rows; ++py) {
-            int sy = gy + py;
-            if (sy < 0 || sy >= sb->height) continue;
+        for (int by = 0; by < bitmap->rows; ++by) {
+            int sy = glyph_y + by;
+            if (sy < 0 || sy >= buffer->height) continue;
         
-            for (int px = 0; px < bmp->width; ++px) {
-                int sx = gx + px;
-                if (sx < 0 || sx >= sb->width) continue;
+            for (int bx = 0; bx < bitmap->width; ++bx) {
+                int sx = glyph_x + bx;
+                if (sx < 0 || sx >= buffer->width) continue;
         
-                unsigned char alpha = bmp->buffer[py * bmp->pitch + px];
+                u8 bitmap_alpha = bitmap->buffer[by * bitmap->pitch + bx];
         
-                if (alpha == 0) continue;
+                if (bitmap_alpha == 0) continue;
         
-                u32* dst = &sb->pixels[sy * sb->width + sx];
+                u32* dst = &buffer->pixels[sy * buffer->width + sx];
                 u32  bg  = *dst;
         
-                // int r = ((color >> 16) & 255) * alpha + ((bg >> 16) & 255) * (255 - alpha);
-                // int g = ((color >>  8) & 255) * alpha + ((bg >>  8) & 255) * (255 - alpha);
-                // int b = ( color        & 255) * alpha + ( bg        & 255) * (255 - alpha);
-        
-                // *dst = 0xFF000000 | (r/255 << 16) | (g/255 << 8) | (b/255);
-                
-                *dst = blend_grayscale_glyph(bg, color, alpha);
+                *dst = blend_grayscale_glyph(bg, color, bitmap_alpha);
             }
         }
         
-        pen_x += g->advance.x >> 6;
-    }
-}
-
-void render_text_lcd(Screen_Buffer* sb, const char *text, int x, int y, u32 color)
-{
-    int pen_x = x;
-    int pen_y = y;
-
-    const char *p = text;
-    while (*text) {
-        u32 codepoint = decode_utf8(&text);
-        
-        if (codepoint < 32 && codepoint != '\n' && codepoint != '\t') continue;
-        
-        FT_UInt glyph_index = FT_Get_Char_Index(face, codepoint);
-        if (glyph_index == 0) { 
-            glyph_index = FT_Get_Char_Index(face, 0xFFFD);
-        }
-        
-        i32 flags = FT_LOAD_RENDER | FT_LOAD_TARGET_LCD | FT_LOAD_TARGET_LIGHT | FT_LOAD_FORCE_AUTOHINT;
-        
-        if (FT_Load_Glyph(face, glyph_index, flags) != 0) {
-            FT_Load_Glyph(face, 0xFFFD, flags);
-        }
-
-        FT_GlyphSlot g = face->glyph;
-        FT_Bitmap* bmp = &g->bitmap;
-
-        if (codepoint == '\n') {
-            pen_y += font_size * 1.4f;
-            pen_x = x;
-        }
-        if (codepoint == '\t') {
-            pen_x += font_size;
-        }
-        
-        if (codepoint == '\n' || codepoint == '\t') continue;
-
-        int gx = pen_x + g->bitmap_left;
-        int gy = pen_y - g->bitmap_top;
-
-        for (int py = 0; py < bmp->rows; ++py) {
-            int sy = gy + py;
-            if (sy < 0 || sy >= sb->height) continue;
-
-            for (int px = 0; px < bmp->width / 3; ++px) {
-                int sx = gx + px;
-                if (sx < 0 || sx >= sb->width) continue;
-
-                unsigned char* src = bmp->buffer + py * bmp->pitch + px * 3;
-                int r = src[0];
-                int g = src[1];
-                int b = src[2];
-
-                if (r == 0 && g == 0 && b == 0) continue;
-
-                u32* dst = &sb->pixels[sy * sb->width + sx];
-                u32 bg = *dst;
-
-                int fg_r = (color >> 16) & 0xFF;
-                int fg_g = (color >>  8) & 0xFF;
-                int fg_b = (color      ) & 0xFF;
-
-                int out_r = (fg_r * r + ((bg >> 16) & 0xFF) * (255 - r)) / 255;
-                int out_g = (fg_g * g + ((bg >>  8) & 0xFF) * (255 - g)) / 255;
-                int out_b = (fg_b * b + ((bg      ) & 0xFF) * (255 - b)) / 255;
-
-                *dst = 0xFF000000 | (out_r << 16) | (out_g << 8) | out_b;
-            }
-        }
-
-        pen_x += g->advance.x >> 6;
+        pen_x += glyph->advance.x >> 6;
     }
 }

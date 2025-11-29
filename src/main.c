@@ -141,7 +141,6 @@ i32 main()
         HDC hdc = GetDC(hwnd);
         
         render_text_ft(&screen_buffer, "Привет 228\nHello my man normal!", 100, 100, (i32)(0x00FFFFFF)); 
-        render_text_lcd(&screen_buffer, "Привет 228\nHello my man lcd!", 100, 200, (i32)(0x00FFFFFF)); 
         
         // Draw our screen buffer
         DrawScreenBuffer(hdc, &screen_buffer, 0, 0);
