@@ -7,7 +7,9 @@ i32 font_size = 24;
 
 void init_freetype() {
     FT_Init_FreeType(&ft);
-    FT_New_Face(ft, "../SpaceMono-Regular.ttf", 0, &face);
+    if (FT_New_Face(ft, "../Nunito-Regular.ttf", 0, &face) != 0) {
+        printf("Font does not contains UNICODE characters?\n");
+    }
     FT_Set_Pixel_Sizes(face, 0, font_size);
 }
 
@@ -17,17 +19,46 @@ void free_font() {
     // FT_Done_FreeType(ft);
 }
 
+static uint32_t decode_utf8(const char** ptr)
+{
+    const unsigned char* s = (const unsigned char*)*ptr;
+    if (s[0] < 0x80) { *ptr += 1; return s[0]; }
+    if ((s[0] & 0xE0) == 0xC0 && (s[1] & 0xC0) == 0x80) { *ptr += 2; return ((s[0]&0x1F)<<6) | (s[1]&0x3F); }
+    if ((s[0] & 0xF0) == 0xE0 && (s[1] & 0xC0) == 0x80 && (s[2] & 0xC0) == 0x80) { *ptr += 3; return ((s[0]&0x0F)<<12) | ((s[1]&0x3F)<<6) | (s[2]&0x3F); }
+    if ((s[0] & 0xF8) == 0xF0 && (s[1] & 0xC0) == 0x80 && (s[2] & 0xC0) == 0x80 && (s[3] & 0xC0) == 0x80) { *ptr += 4; return ((s[0]&0x07)<<18) | ((s[1]&0x3F)<<12) | ((s[2]&0x3F)<<6) | (s[3]&0x3F); }
+    
+    *ptr += 1; return 0xFFFD; // � replacement character
+}
+
 void render_text_ft(Screen_Buffer* sb, const char *text, int x, int y, u32 color)
 {
     int pen_x = x;
     int pen_y = y;
 
-    for (; *text; ++text) {
-        if (FT_Load_Char(face, *text, FT_LOAD_RENDER | FT_LOAD_TARGET_LCD | FT_LOAD_TARGET_LIGHT | FT_LOAD_FORCE_AUTOHINT) != 0)
-            continue;
+    const char *p = text;
+    while (*text) {
+        u32 codepoint = decode_utf8(&text);
+        
+        if (codepoint < 32 && codepoint != '\n' && codepoint != '\t') continue;
+        
+        FT_UInt glyph_index = FT_Get_Char_Index(face, codepoint);
+        if (glyph_index == 0) { 
+            glyph_index = FT_Get_Char_Index(face, 0xFFFD);
+        }
+        
+        if (FT_Load_Glyph(face, glyph_index, FT_LOAD_RENDER | FT_LOAD_TARGET_LCD | FT_LOAD_TARGET_LIGHT | FT_LOAD_FORCE_AUTOHINT) != 0) {
+            FT_Load_Glyph(face, 0xFFFD, FT_LOAD_RENDER | FT_LOAD_TARGET_LCD | FT_LOAD_TARGET_LIGHT | FT_LOAD_FORCE_AUTOHINT);
+        }
 
         FT_GlyphSlot g = face->glyph;
         FT_Bitmap* bmp = &g->bitmap;
+
+        if (codepoint == '\n') {
+            pen_y += font_size * 2;
+            pen_x = x;
+        }
+        
+        if (codepoint == '\n' || codepoint == '\t') continue;
 
         int gx = pen_x + g->bitmap_left;
         int gy = pen_y - g->bitmap_top;

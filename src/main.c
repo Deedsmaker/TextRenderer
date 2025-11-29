@@ -2,6 +2,13 @@
     #define UNICODE
 #endif
 
+#if defined(_MSC_VER)
+    // This is the ONLY combo that actually works in 2025
+    // #pragma execution_character_set("utf-8")
+    // Force Windows to use UTF-8 codepage system-wide for this process
+    #include <windows.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -75,73 +82,6 @@ static inline f32 smoothstep(f32 e0, f32 e1, f32 x) {
     return x * x * (3 - 2 * x);
 }
 
-void draw_text(Vector2_int pos) {
-    // Load font
-    FT_Library ft;
-    FT_Face face;
-    FT_Init_FreeType(&ft);
-    FT_New_Face(ft, "../SpaceMono-Regular.ttf", 0, &face);
-    FT_Set_Pixel_Sizes(face, 0, 48);  // 48px height
-    
-    // For each character in your string
-    const char* text = "Whereas disregard and ";
-    
-    for (; *text; text++) {
-        // Load once
-        FT_Load_Char(face, *text, FT_LOAD_RENDER | FT_LOAD_TARGET_LCD);
-        
-        FT_GlyphSlot glyph = face->glyph;
-        // bitmap is now WIDTH × HEIGHT × 3 bytes (R G B subpixels)
-        FT_Bitmap *bmp         = &face->glyph->bitmap;
-        
-        for (int y = 0; y < bmp->rows; ++y) {
-            for (int x = 0; x < bmp->width; ++x) {
-                int px = pos.x + glyph->bitmap_left + x;
-                int py = pos.y - glyph->bitmap_top  + y;
-        
-                if (px+2 >= screen_buffer.width || py >= screen_buffer.height) continue;
-        
-                unsigned char* src = bmp->buffer + y*bmp->pitch + x*3;
-                int r = src[0], g = src[1], b = src[2];
-        
-                if (!r && !g && !b) continue;
-        
-                u32* dst = &screen_buffer.pixels[py * screen_buffer.width + px];
-        
-                // Subpixel-aware gamma-correct blend (linear light)
-                #define BLEND(c, a) ((c)*(a)/255 + bg_##c * (255-a)/255)
-                #define GET(c) ((bg >> (8*c)) & 255)
-        
-                u32 bg = *dst;
-                int bg_r = GET(2), bg_g = GET(1), bg_b = GET(0);
-        
-                // Linearize → blend → sRGB back (approx with 2.2 gamma)
-                #define TO_LINEAR(v) pow(v/255.0f, 2.2f)
-                #define TO_SRGB(v)   (u8)(255.0f * pow(v, 1.0f/2.2f) + 0.5f)
-        
-                float lr = TO_LINEAR(r);  // red subpixel only affects red channel
-                float lg = TO_LINEAR(g);
-                float lb = TO_LINEAR(b);
-        
-                float final_r = lr * (r+g+b)/ (3.0f*255) + TO_LINEAR(bg_r) * (1 - (r+g+b)/(3.0f*255));
-                float final_g = lg * (r+g+b)/ (3.0f*255) + TO_LINEAR(bg_g) * (1 - (r+g+b)/(3.0f*255));
-                float final_b = lb * (r+g+b)/ (3.0f*255) + TO_LINEAR(bg_b) * (1 - (r+g+b)/(3.0f*255));
-        
-                *dst = 0xFF000000 |
-                       TO_SRGB(final_r) << 16 |
-                       TO_SRGB(final_g) << 8  |
-                       TO_SRGB(final_b);
-            }
-        }
-        
-        pos.x += glyph->advance.x >> 6;
-    }
-    
-    // Cleanup
-    FT_Done_Face(face);
-    FT_Done_FreeType(ft);
-}
-
 void init() {
     
 }
@@ -157,6 +97,12 @@ void draw() {
 // i32 WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, i32 nCmdShow)
 i32 main()
 {
+
+    SetConsoleCP(65001);
+    SetConsoleOutputCP(65001);
+    // This is the killer line → makes all char* literals real UTF-8
+    // _setmode(_fileno(stdout), _O_U8TEXT);
+
     // Register the window class
     const wchar_t CLASS_NAME[] = L"Direct Draw Window";
     
@@ -182,7 +128,7 @@ i32 main()
     ShowWindow(hwnd, 1);
     
     init_freetype();
-    
+      
     MSG msg = {0};
     while (should_run) {
         while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -194,7 +140,7 @@ i32 main()
         // Initial direct drawing
         HDC hdc = GetDC(hwnd);
         
-        render_text_ft(&screen_buffer, "The quick brown fox jumps over.", 100, 100, 0x00FFFFFF);
+        render_text_ft(&screen_buffer, "Привет 228\nHello my man!", 100, 100, 0x00FFFFFF); 
         
         // Draw our screen buffer
         DrawScreenBuffer(hdc, &screen_buffer, 0, 0);
