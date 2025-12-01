@@ -771,39 +771,41 @@ i32 string_find_digit(String s) {
     return -1;
 }
 
-// #include "array.cpp"
+#include "CArray.c"
 
-// void split_string(Array <String> *splitted, String to_split, String separators) {
-//     if (separators.count <= 0) {    
-//         return;
-//     }
+DEFINE_ARRAY(Array_String, String, string_equal);
+
+void split_string_to_existing(Array_String *splitted, String to_split, String separators) {
+    if (separators.count <= 0) {    
+        return;
+    }
     
-//     splitted->clear();
-//     int ground_index = 0;
+    String_array_clear(splitted);
+    int ground_index = 0;
     
-//     for (int i = 0; i < to_split.count; i++) {
-//         for (int s = 0; s < separators.count; s++) {
-//             if (to_split.data[i] == separators.data[s]) {
-//                 // That check exists for continuous separators.
-//                 if (ground_index < i) {                
-//                     splitted->append(make_substring(to_split, ground_index, i - 1, splitted->allocator)); // i - 1 because make_substring include end index and we don't want to add separator to string.
-//                 }
+    for (int i = 0; i < to_split.count; i++) {
+        for (int s = 0; s < separators.count; s++) {
+            if (to_split.data[i] == separators.data[s]) {
+                // That check exists for continuous separators.
+                if (ground_index < i) {                
+                    String_array_append(splitted, make_substring(to_split, ground_index, i - 1, splitted->allocator)); // i - 1 because make_substring include end index and we don't want to add separator to string.
+                }
                     
-//                 ground_index = i + 1;
-//             }
-//         }
-//     }
+                ground_index = i + 1;
+            }
+        }
+    }
     
-//     // At that point ground index should be equal to (last separator + 1) and we need to add last substring to array.
-//     // So if last separator was last symbol - ground_index would be equal to to_split.count.
-//     if (ground_index <= to_split.count - 1) {
-//         splitted->append(make_substring(to_split, ground_index, to_split.count - 1, splitted->allocator));
-//     }
-// }
+    // At that point ground index should be equal to (last separator + 1) and we need to add last substring to array.
+    // So if last separator was last symbol - ground_index would be equal to to_split.count.
+    if (ground_index <= to_split.count - 1) {
+        String_array_append(splitted, make_substring(to_split, ground_index, to_split.count - 1, splitted->allocator));
+    }
+}
 
-// Array <String> split_string(String to_split, String separators, Allocator *allocator) {
-//     Array <String> result = {.allocator = allocator};     
-//     split_string(&result, to_split, separators);    
-//     return result;
-// }
+Array_String split_string(String to_split, String separators, Allocator *allocator) {
+    Array_String result = {.allocator = allocator};     
+    split_string_to_existing(&result, to_split, separators);    
+    return result;
+}
 

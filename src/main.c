@@ -25,7 +25,9 @@ typedef struct {
     i32 width;
     i32 height;
 } Screen_Buffer;
-DEFINE_ARRAY(Array_i32, i32);
+
+b32 compare_i32(i32 a, i32 b) { return a == b; }
+DEFINE_ARRAY(Array_i32, i32, compare_i32);
 
 typedef struct Vector2_int { 
     i32 x, y;
