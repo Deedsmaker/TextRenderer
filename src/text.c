@@ -33,27 +33,40 @@ static inline u32 decode_utf8(const char** ptr)
     *ptr += 1; return 0xFFFD; // � replacement character
 }
 
-static inline u32 blend_grayscale_glyph(u32 dst, u32 color, u8 bitmap_alpha)
+static inline u32 blend_grayscale_glyph(u32 bg, u32 color, u8 bitmap_alpha)
 {
-    if (bitmap_alpha == 0) return dst;
-    if (bitmap_alpha == 255) return 0xFF000000 | color;
+    if (bitmap_alpha == 0) return bg;
+    if (bitmap_alpha == 0xFF) return 0xFF000000 | color;
 
-    // unsigned int alpha = (bitmap_alpha * bitmap_alpha + 127 * bitmap_alpha) >> 14; // Approximately a^(1.4)
     unsigned int alpha = bitmap_alpha;
 
-    unsigned int inv = 255 - alpha;
+    int r = ((color >> 16) & 0xFF) * alpha + ((bg >> 16) & 0xFF) * (0xFF - alpha);
+    int g = ((color >>  8) & 0xFF) * alpha + ((bg >>  8) & 0xFF) * (0xFF - alpha);
+    int b = ( color        & 0xFF) * alpha + ( bg        & 0xFF) * (0xFF - alpha);
 
-    int dr = (dst >> 16) & 255;
-    int dg = (dst >> 8)  & 255;
-    int db =  dst        & 255;
+    return 0xFF000000 | (r/0xFF << 16) | (g/0xFF << 8) | (b/0xFF);
+}
 
-    int sr = (color >> 16) & 255;
-    int sg = (color >> 8)  & 255;
-    int sb =  color        & 255;
+static inline u32 blend_grayscale_glyph_another(u32 bg, u32 color, u8 bitmap_alpha)
+{
+    if (bitmap_alpha == 0) return bg;
+    if (bitmap_alpha == 0xFF) return 0xFF000000 | color;
 
-    int r = (sr * alpha + dr * inv + 127) / 255;
-    int g = (sg * alpha + dg * inv + 127) / 255;
-    int b = (sb * alpha + db * inv + 127) / 255;
+    unsigned int alpha = bitmap_alpha;
+
+    unsigned int inv = 0xFF - alpha;
+
+    int dr = (bg >> 16) & 0xFF;
+    int dg = (bg >> 8)  & 0xFF;
+    int db =  bg        & 0xFF;
+
+    int sr = (color >> 16) & 0xFF;
+    int sg = (color >> 8)  & 0xFF;
+    int sb =  color        & 0xFF;
+
+    int r = (sr * alpha + dr * inv + 127) / 0xFF;
+    int g = (sg * alpha + dg * inv + 127) / 0xFF;
+    int b = (sb * alpha + db * inv + 127) / 0xFF;
 
     return 0xFF000000 | (r << 16) | (g << 8) | b;
 }
@@ -113,6 +126,11 @@ void render_text_ft(Screen_Buffer* buffer, const char *text, int x, int y, u32 c
                 u32  bg  = *dst;
         
                 *dst = blend_grayscale_glyph(bg, color, bitmap_alpha);
+                
+                dst = &buffer->pixels[(sy +50) * buffer->width + sx];
+                bg  = *dst;
+        
+                *dst = blend_grayscale_glyph_another(bg, color, bitmap_alpha);
             }
         }
         

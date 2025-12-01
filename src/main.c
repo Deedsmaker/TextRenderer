@@ -102,7 +102,7 @@ i32 main()
         
         draw_gradient(&screen_buffer);
         
-        render_text_ft(&screen_buffer, "Привет 1234567890\nHello my man normal!", 100, 100, (i32)(0x00FFFFFF)); 
+        render_text_ft(&screen_buffer, "Привет 1234567890\nHello my man normal!", 100, 100, (i32)(0x00EAC38F)); 
         
         win32_finish_drawing(hwnd, hdc, &screen_buffer);
     }
