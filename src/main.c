@@ -18,7 +18,7 @@
 #include FT_FREETYPE_H
 
 #include "CArray.c"
-
+#include "String.c"
 
 typedef struct {
     u32* pixels;

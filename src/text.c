@@ -5,7 +5,7 @@
 FT_Library ft;
 FT_Face face;
 
-i32 font_size = 22;
+i32 font_size = 15;
 
 void init_freetype() {
     FT_Init_FreeType(&ft);
