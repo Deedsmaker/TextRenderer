@@ -5,7 +5,7 @@
 FT_Library ft;
 FT_Face face;
 
-i32 font_size = 15;
+i32 font_size = 12;
 
 void init_freetype() {
     FT_Init_FreeType(&ft);
@@ -38,7 +38,8 @@ static inline u32 blend_grayscale_glyph(u32 dst, u32 color, u8 bitmap_alpha)
     if (bitmap_alpha == 0) return dst;
     if (bitmap_alpha == 255) return 0xFF000000 | color;
 
-    unsigned int alpha = (bitmap_alpha * bitmap_alpha + 127 * bitmap_alpha) >> 14; // Approximately a^(1.4)
+    // unsigned int alpha = (bitmap_alpha * bitmap_alpha + 127 * bitmap_alpha) >> 14; // Approximately a^(1.4)
+    unsigned int alpha = bitmap_alpha;
 
     unsigned int inv = 255 - alpha;
 
