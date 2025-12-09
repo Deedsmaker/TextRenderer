@@ -71,5 +71,7 @@ inline void win32_finish_drawing(HWND hwnd, HDC screen_device_context, Screen_Bu
     win32_draw_screen_buffer(screen_device_context, screen_buffer, 0, 0);
     ReleaseDC(hwnd, screen_device_context);
     UpdateWindow(hwnd);
+    
+    InvalidateRect(hwnd, NULL, FALSE);
 }
 
