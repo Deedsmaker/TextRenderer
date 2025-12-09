@@ -47,30 +47,6 @@ static inline u32 blend_grayscale_glyph(u32 bg, u32 color, u8 bitmap_alpha)
     return 0xFF000000 | (r/0xFF << 16) | (g/0xFF << 8) | (b/0xFF);
 }
 
-static inline u32 blend_grayscale_glyph_another(u32 bg, u32 color, u8 bitmap_alpha)
-{
-    if (bitmap_alpha == 0) return bg;
-    if (bitmap_alpha == 0xFF) return 0xFF000000 | color;
-
-    unsigned int alpha = bitmap_alpha;
-
-    unsigned int inv = 0xFF - alpha;
-
-    int dr = (bg >> 16) & 0xFF;
-    int dg = (bg >> 8)  & 0xFF;
-    int db =  bg        & 0xFF;
-
-    int sr = (color >> 16) & 0xFF;
-    int sg = (color >> 8)  & 0xFF;
-    int sb =  color        & 0xFF;
-
-    int r = (sr * alpha + dr * inv + 127) / 0xFF;
-    int g = (sg * alpha + dg * inv + 127) / 0xFF;
-    int b = (sb * alpha + db * inv + 127) / 0xFF;
-
-    return 0xFF000000 | (r << 16) | (g << 8) | b;
-}
-
 void render_text_ft(Screen_Buffer* buffer, const char *text, int x, int y, u32 color)
 {
     int pen_x = x;
@@ -126,11 +102,6 @@ void render_text_ft(Screen_Buffer* buffer, const char *text, int x, int y, u32 c
                 u32  bg  = *dst;
         
                 *dst = blend_grayscale_glyph(bg, color, bitmap_alpha);
-                
-                dst = &buffer->pixels[(sy +50) * buffer->width + sx];
-                bg  = *dst;
-        
-                *dst = blend_grayscale_glyph_another(bg, color, bitmap_alpha);
             }
         }
         

@@ -38,8 +38,8 @@ typedef struct Vector2_int {
 
 b32 should_run = true;
 
-// Global screen buffer
 Screen_Buffer screen_buffer = {0};
+String_Builder input_text = {0};
 
 #include "text.c"
 
@@ -86,6 +86,8 @@ void draw_gradient(Screen_Buffer* buffer)
 // i32 WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, i32 nCmdShow)
 i32 main()
 {
+    init_allocator(temp, Megabytes(2));
+    
     HWND hwnd = win32_init_window();
     
     init_freetype();
@@ -103,6 +105,10 @@ i32 main()
         draw_gradient(&screen_buffer);
         
         render_text_ft(&screen_buffer, "Привет 1234567890\nHello my man normal!", 100, 100, (i32)(0x00EAC38F)); 
+        
+        if (input_text.data) {
+            render_text_ft(&screen_buffer, input_text.data, 100, 200, (i32)(0x00EAC38F)); 
+        }
         
         win32_finish_drawing(hwnd, hdc, &screen_buffer);
     }
@@ -147,6 +153,23 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
+        case WM_CHAR:
+        {
+            WCHAR wide_char = (WCHAR)wParam;
+    
+            // Convert UTF-16 to UTF-8
+            int buffer_size = WideCharToMultiByte(CP_UTF8, 0, &wide_char, 1, NULL, 0, NULL, NULL);
+            if (buffer_size > 0 && buffer_size <= 4)
+            {
+                static char buf[5];
+                // std::vector<char> utf8Buffer(buffer_size);
+                WideCharToMultiByte(CP_UTF8, 0, &wide_char, 1, buf, buffer_size, NULL, NULL);
+                
+                builder_append_str(&input_text, buf);
+            } else if (buffer_size > 4) {
+                printf("WATAHEWLL\n");
+            }
+        } break;
         case WM_CREATE:
         {
             RECT rect;
@@ -202,47 +225,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             switch (wParam)
             {
-                case 'R':
-                    draw_random_pixel(&screen_buffer);
-                    break;
-                    
-                case 'G':
-                    draw_gradient(&screen_buffer);
-                    break;
-                    
-                case 'C':
-                    clear_screen_buffer(&screen_buffer, RGB(0, 0, 0));
-                    break;
-                    
-                case 'B':
-                    for (i32 frame = 0; frame < 100; frame++) {
-                        clear_screen_buffer(&screen_buffer, RGB(0, 0, 0));
-                        
-                        i32 ballX = (frame * 10) % screen_buffer.width;
-                        i32 ballY = (screen_buffer.height / 2) + 
-                                   (i32)(sin(frame * 0.1) * 100);
-                        
-                        for (i32 dy = -10; dy <= 10; dy++) {
-                            for (i32 dx = -10; dx <= 10; dx++) {
-                                if (dx*dx + dy*dy <= 10*10) {
-                                    i32 px = ballX + dx;
-                                    i32 py = ballY + dy;
-                                    if (px >= 0 && px < screen_buffer.width && 
-                                        py >= 0 && py < screen_buffer.height) {
-                                        draw_pixel(&screen_buffer, px, py, RGB(0, 255, 0));
-                                    }
-                                }
-                            }
-                        }
-                        
-                        InvalidateRect(hwnd, NULL, FALSE);
-                        UpdateWindow(hwnd);
-                        Sleep(16); // ~60 FPS
-                    }
-                    break;
+                case VK_RETURN:
+                    builder_append_char(&input_text, '\n');
+                break;
+                case VK_BACK:
+                break;
             }
-            
-            InvalidateRect(hwnd, NULL, FALSE);
         }
         break;
         
