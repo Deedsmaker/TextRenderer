@@ -600,59 +600,16 @@ void builder_append(String_Builder *builder, String string);
 String make_string_from_builder(String_Builder *builder, Allocator *allocator);
 
 String tstring(const char *text, ...) {
-    String_Builder builder = {.allocator = temp};
+    String result_string = {.allocator = temp};
     
     va_list args;
     va_start(args, text);
-    
-    for (const char *ch = text; *ch != '\0'; ch++) {
-        switch (*ch) {
-            case '%': {
-                ch++;
-                if (!*ch) break;
-                switch (*ch) {
-                    case 's': {
-                        char *str = va_arg(args, char *);
-                        builder_append_str(&builder, str);                        
-                    } break;
-                    case 'S': {
-                        String string = va_arg(args, String);
-                        builder_append(&builder, string);
-                    } break;
-                    case 'c': {
-                        char character = va_arg(args, char);
-                        builder_append_char(&builder, character);                        
-                    } break;
-                    case 'f': {
-                        float number = va_arg(args, float);
-                        builder_append_str(&builder, tprintf("%f", number));                        
-                    } break;
-                    case 'd': {
-                        i32 number = va_arg(args, i32);
-                        builder_append_str(&builder, tprintf("%d", number));                        
-                    } break;
-                    case 'u': {
-                        u32 number = va_arg(args, u32);
-                        builder_append_str(&builder, tprintf("%u", number));             
-                    } break;
-                    case 'l': {
-                        i64 number = va_arg(args, i64);
-                        builder_append_str(&builder, tprintf("%lld", number));                        
-                    } break;
-                    default: {
-                        builder_append_str(&builder, "UNHANdLEd_ARG");
-                    } break;
-                }
-            } break;
-            default: {
-                builder_append_char(&builder, *ch);
-            } break;
-        }
-    }
-    
+    i32 byte_count = vsnprintf(result_string.data, 0, text, args);
+    result_string.data = alloc(result_string.allocator, byte_count + 1);
+    vsnprintf(result_string.data, byte_count + 1, text, args);
     va_end(args);
     
-    String result_string = make_string_from_builder(&builder, temp);
+    result_string.count = byte_count;
     
     return result_string;
 }
