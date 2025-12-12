@@ -47,10 +47,12 @@ static inline u32 blend_grayscale_glyph(u32 bg, u32 color, u8 bitmap_alpha)
     return 0xFF000000 | (r/0xFF << 16) | (g/0xFF << 8) | (b/0xFF);
 }
 
-void render_text_ft(Screen_Buffer* buffer, const char *text, int x, int y, u32 color)
+Rect render_text_ft(Screen_Buffer* buffer, const char *text, int x, int y, u32 color)
 {
     int pen_x = x;
     int pen_y = y;
+    
+    Rect rect = {.x = x, .y = y};
 
     const char *p = text;
     while (*text) {
@@ -107,4 +109,9 @@ void render_text_ft(Screen_Buffer* buffer, const char *text, int x, int y, u32 c
         
         pen_x += glyph->advance.x >> 6;
     }
+    
+    rect.w = pen_x - x;
+    rect.h = pen_y - y;
+    
+    return rect;
 }

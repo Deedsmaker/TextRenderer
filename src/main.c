@@ -17,9 +17,10 @@
 #include "ft2build.h"
 #include FT_FREETYPE_H
 
+#include "my_defines.h"
+#include "CMath.c"
 #include "CArray.c"
 #include "String.c"
-
 
 typedef struct {
     u32* pixels;
@@ -32,24 +33,18 @@ typedef struct {
 b32 compare_i32(i32 a, i32 b) { return a == b; }
 DEFINE_ARRAY(Array_i32, i32, compare_i32);
 
-typedef struct Vector2_int { 
+typedef struct Vector2_i32 { 
     i32 x, y;
-} Vector2_int;
+} Vector2_i32;
 
 b32 should_run = true;
 
 Screen_Buffer screen_buffer = {0};
 String_Builder input_text = {0};
 
+// Project includes.
+#include "draw.c"
 #include "text.c"
-
-inline void draw_pixel(Screen_Buffer* buffer, i32 x, i32 y, u32 color)
-{
-    if (!buffer || !buffer->pixels) return;
-    if (x < 0 || x >= buffer->width || y < 0 || y >= buffer->height) return;
-    
-    buffer->pixels[y * buffer->width + x] = color;
-}
 
 static inline f32 smoothstep(f32 e0, f32 e1, f32 x) {
     x = x < e0 ? 0 : (x > e1 ? 1 : (x - e0)/(e1 - e0));
@@ -109,6 +104,9 @@ i32 main()
         if (input_text.data) {
             render_text_ft(&screen_buffer, input_text.data, 100, 200, (i32)(0x00EAC38F)); 
         }
+        
+        draw_line_1(&screen_buffer, (Vector2_i32){30, 80}, (Vector2_i32){1500, 750}, 1);
+        draw_line_aa(&screen_buffer, (Vector2_i32){30, 30}, (Vector2_i32){1500, 700}, 1, 0xFFFFFFFF);
         
         win32_finish_drawing(hwnd, hdc, &screen_buffer);
     }
