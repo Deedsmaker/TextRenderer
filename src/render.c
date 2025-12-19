@@ -1,7 +1,22 @@
 #pragma once
 
-#include "render.h"
 #include "Memory_Arena.c"
+
+typedef struct {
+    Memory_Arena *arena;
+    u32* pixels;
+    i32 width;
+    i32 height;
+} Screen_Buffer;
+
+typedef struct Rect {
+    i32 x, y;
+    i32 w, h;
+} Rect;
+
+typedef struct Color {
+    u8 r, g, b, a;
+} Color;
 
 static Screen_Buffer *main_buffer = NULL;
 static Screen_Buffer *current_buffer = NULL;

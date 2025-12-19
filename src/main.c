@@ -22,7 +22,7 @@
 #include "CArray.c"
 #include "String.c"
 
-#include "render.h"
+#include "render.c"
 
 #include "win32_main.c"
 
@@ -39,6 +39,7 @@ String_Builder input_text = {0};
 
 static inline f32 smoothstep(f32 e0, f32 e1, f32 x) {
     x = x < e0 ? 0 : (x > e1 ? 1 : (x - e0)/(e1 - e0));
+    
     return x * x * (3 - 2 * x);
 }
 
@@ -182,4 +183,3 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-#include "render.c"
