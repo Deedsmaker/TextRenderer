@@ -2,6 +2,11 @@
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+typedef struct Screen_Buffer;
+
+HWND main_window = {0};
+HDC main_drawing_context = {0};
+
 HWND win32_init_window() {
     SetConsoleCP(65001);
     SetConsoleOutputCP(65001);
@@ -30,11 +35,13 @@ HWND win32_init_window() {
     
     ShowWindow(hwnd, 1);
     
+    main_window = hwnd;
+    
     return hwnd;
 }
 
 // Draw the screen buffer to a device context
-void win32_draw_screen_buffer(HDC screen_device_context, Screen_Buffer* buffer, i32 x, i32 y)
+void win32_draw_screen_buffer(Screen_Buffer* buffer, i32 x, i32 y)
 {
     if (!buffer || !buffer->pixels) return;
     
@@ -49,7 +56,7 @@ void win32_draw_screen_buffer(HDC screen_device_context, Screen_Buffer* buffer, 
     
     // Use SetDIBitsToDevice for direct drawing
     SetDIBitsToDevice(
-        screen_device_context,
+        main_drawing_context,
         x, y,                    // Destination coordinates
         buffer->width,           // Source width
         buffer->height,          // Source height
@@ -62,16 +69,16 @@ void win32_draw_screen_buffer(HDC screen_device_context, Screen_Buffer* buffer, 
     );
 }
 
-inline HDC win32_start_drawing(HWND hwnd) { 
-    HDC screen_device_context = GetDC(hwnd);
-    return screen_device_context;
+inline HDC win32_start_drawing() { 
+    main_drawing_context = GetDC(main_window);
+    return main_drawing_context;
 }
 
-inline void win32_finish_drawing(HWND hwnd, HDC screen_device_context, Screen_Buffer *screen_buffer) { 
-    win32_draw_screen_buffer(screen_device_context, screen_buffer, 0, 0);
-    ReleaseDC(hwnd, screen_device_context);
-    UpdateWindow(hwnd);
+inline void win32_finish_drawing(Screen_Buffer *screen_buffer) { 
+    win32_draw_screen_buffer(screen_buffer, 0, 0);
+    ReleaseDC(main_window, main_drawing_context);
+    UpdateWindow(main_window);
     
-    InvalidateRect(hwnd, NULL, FALSE);
+    InvalidateRect(main_window, NULL, FALSE);
 }
 

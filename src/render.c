@@ -49,6 +49,13 @@ void init_main_screen_buffer(i32 width, i32 height) {
     current_buffer = main_buffer;
 }   
 
+void begin_drawing() {
+    win32_start_drawing();
+}
+
+void end_drawing() {
+    win32_finish_drawing(get_current_screen_buffer());
+}
 
 #include <emmintrin.h>  // SSE2
 

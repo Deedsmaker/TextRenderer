@@ -22,11 +22,11 @@
 #include "CArray.c"
 #include "String.c"
 
-#include "render.c"
-
 #include "win32_main.c"
 
-b32 compare_i32(i32 a, i32 b) { return a == b; }
+#include "render.c"
+
+inline b32 compare_i32(i32 a, i32 b) { return a == b; }
 DEFINE_ARRAY(Array_i32, i32, compare_i32);
 
 b32 should_run = true;
@@ -60,7 +60,7 @@ i32 main()
 {
     init_arena(temp, Megabytes(16));
     
-    HWND hwnd = win32_init_window();
+    win32_init_window();
     
     init_freetype();
     
@@ -71,8 +71,7 @@ i32 main()
             DispatchMessage(&msg);
         }
     
-        // Initial direct drawing
-        HDC hdc = win32_start_drawing(hwnd);
+        begin_drawing();
         
         draw_gradient();
         
@@ -85,7 +84,7 @@ i32 main()
         draw_line_raw((Vector2_i32){30, 80}, (Vector2_i32){1500, 750}, 1);
         draw_line((Vector2_i32){30, 30}, (Vector2_i32){1500, 700}, 1, 0xFFFFFFFF);
         
-        win32_finish_drawing(hwnd, hdc, get_current_screen_buffer());
+        end_drawing();
     }
     
     return 0;
