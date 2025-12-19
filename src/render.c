@@ -1,16 +1,14 @@
 #pragma once
 
+#include "render.h"
 #include "Memory_Arena.c"
-
-typedef struct {
-    Memory_Arena *arena;
-    u32* pixels;
-    i32 width;
-    i32 height;
-} Screen_Buffer;
 
 static Screen_Buffer *main_buffer = NULL;
 static Screen_Buffer *current_buffer = NULL;
+
+Screen_Buffer *get_current_screen_buffer() {
+    return current_buffer;
+}
 
 inline Screen_Buffer *make_screen_buffer(i32 width, i32 height, Memory_Arena *arena) {
     Screen_Buffer *buffer = alloc(arena, sizeof(Screen_Buffer));
@@ -36,14 +34,6 @@ void init_main_screen_buffer(i32 width, i32 height) {
     current_buffer = main_buffer;
 }   
 
-typedef struct Rect {
-    i32 x, y;
-    i32 w, h;
-} Rect;
-
-typedef struct Color {
-    u8 r, g, b, a;
-} Color;
 
 #include <emmintrin.h>  // SSE2
 

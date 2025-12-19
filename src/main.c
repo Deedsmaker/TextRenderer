@@ -22,7 +22,7 @@
 #include "CArray.c"
 #include "String.c"
 
-#include "render.c"
+#include "render.h"
 
 #include "win32_main.c"
 
@@ -57,7 +57,7 @@ void draw() {
 // i32 WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, i32 nCmdShow)
 i32 main()
 {
-    init_arena(temp, Megabytes(2));
+    init_arena(temp, Megabytes(16));
     
     HWND hwnd = win32_init_window();
     
@@ -84,7 +84,7 @@ i32 main()
         draw_line_raw((Vector2_i32){30, 80}, (Vector2_i32){1500, 750}, 1);
         draw_line((Vector2_i32){30, 30}, (Vector2_i32){1500, 700}, 1, 0xFFFFFFFF);
         
-        win32_finish_drawing(hwnd, hdc, current_buffer);
+        win32_finish_drawing(hwnd, hdc, get_current_screen_buffer());
     }
     
     return 0;
@@ -181,3 +181,5 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
+
+#include "render.c"
