@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Allocator.c"
+#include "Memory_Arena.c"
 
 #define for_array(index, array) for (i32 index = 0; index < (array)->count; index++)
 #define for_array_backwards(index, array) for (i32 index = (array)->count - 1; index >= 0; index--)
@@ -31,7 +31,7 @@ inline void grow_if_need(void **data, size_t element_size, i32 *capacity, i32 cu
 #define DEFINE_ARRAY(Array_Name, T, compare_function)                                                                      \
 typedef struct {                                                                                                           \
     T *data;                                                                                                               \
-    Allocator *allocator;                                                                                                  \
+    Memory_Arena *arena;                                                                                                  \
                                                                                                                            \
     i32 count;                                                                                                             \
     i32 capacity;                                                                                                          \
@@ -189,7 +189,7 @@ inline b32 T##_array_contains_at_least_one(Array_Name *array, Array_Name *anothe
 /* Returns a array of elements that present in one and not in another. */                                                  \
 /* Does not tries to look at duplicates, checks only for unique elements. */                                               \
 inline Array_Name T##_array_get_unique_elements_differences(Array_Name *array, Array_Name *another_array) {                \
-    Array_Name result = {.allocator = temp};                                                                               \
+    Array_Name result = {.arena = temp};                                                                               \
                                                                                                                            \
     Array_Name *biggest = array->count > another_array->count ? array : another_array;                                     \
     Array_Name *smallest = array->count > another_array->count ? another_array : array;                                    \
