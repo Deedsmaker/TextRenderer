@@ -73,7 +73,7 @@ i32 main()
     
         begin_drawing();
         
-        draw_gradient();
+        clear_background(BACKGROUND_COLOR);
         
         render_text_ft("Привет 1234567890\nHello my man normal!", 100, 100, (i32)(0x00EAC38F)); 
         
@@ -117,7 +117,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             GetClientRect(hwnd, &rect);
             init_main_screen_buffer(rect.right, rect.bottom);
             
-            draw_gradient();
+            clear_background(BACKGROUND_COLOR);
         }
         break;
         
@@ -127,7 +127,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             i32 height = HIWORD(lParam);
             init_main_screen_buffer(width, height);
             
-            draw_gradient();
+            clear_background(BACKGROUND_COLOR);
             InvalidateRect(hwnd, NULL, FALSE);
         }
         break;

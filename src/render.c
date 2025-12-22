@@ -21,6 +21,16 @@ typedef struct Color {
 static Screen_Buffer *main_buffer = NULL;
 static Screen_Buffer *current_buffer = NULL;
 
+inline u32 color_to_u32(Color color) {
+    u32 result = color.b | (color.g << 8) | (color.r << 16) | (color.a << 24);
+    return result;
+}
+
+inline Color u32_to_color(u32 number) {
+    Color result = {.r = (number << 16) & 0xFF, .g = (number << 8) & 0xFF, .b = number & 0xFF, .a = (number << 24) & 0xFF};
+    return result;
+}
+
 Screen_Buffer *get_current_screen_buffer() {
     return current_buffer;
 }
@@ -54,7 +64,8 @@ void begin_drawing() {
 }
 
 void end_drawing() {
-    win32_finish_drawing(get_current_screen_buffer());
+    Screen_Buffer *buffer = get_current_screen_buffer();
+    win32_finish_drawing(buffer->pixels, buffer->width, buffer->height);
 }
 
 #include <emmintrin.h>  // SSE2
@@ -130,8 +141,8 @@ static inline void blend_constant_alpha_4x(u32* dst, u32 fg_color, u32 alpha) {
 
 static inline void draw_pixel(i32 x, i32 y, Color color)
 {
-    if (x < 0 || y < 0 || x >= current_buffer->width || y >= current_buffer->height) return;
-    if (color.a == 255) {
+    // Don't check for buffer bounds just so it would be a little faster.
+    if (color.a == 0xFF) {
         current_buffer->pixels[y * current_buffer->width + x] = 0xFF000000 | (color.r << 16) | (color.g << 8) | color.b;
         return;
     }
@@ -229,23 +240,11 @@ void draw_rect_lines(Rect rect) {
     }
 }
 
-void draw_gradient()
+void clear_background(Color color)
 {
-    for (i32 y = 0; y < current_buffer->height; y++) {
-        for (i32 x = 0; x < current_buffer->width; x++) {
-            // u8 r = (u8)((x * 255) / current_buffer->width);
-            // u8 g = (u8)((y * 255) / current_buffer->height);
-            // u8 b = (u8)(((x + y) * 255) / (current_buffer->width + current_buffer->height));
-            // draw_pixel(buffer, x, y, RGB(r, g, b));
-            draw_pixel(x, y, (Color){0x24, 0x27, 0x31, 0xFF});
-        }
-    }
-}
-
-void clear_screen_buffer(u32 color)
-{
+    u32 num = color_to_u32(color);
     for (i32 i = 0; i < current_buffer->width * current_buffer->height; i++) {
-        current_buffer->pixels[i] = color;
+        current_buffer->pixels[i] = num;
     }
 }
 

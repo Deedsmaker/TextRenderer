@@ -1,2 +1,3 @@
 #pragma once
 
+#define BACKGROUND_COLOR (Color){0x24, 0x27, 0x31, 0xFF}

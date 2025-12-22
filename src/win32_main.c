@@ -2,8 +2,6 @@
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-typedef struct Screen_Buffer;
-
 HWND main_window = {0};
 HDC main_drawing_context = {0};
 
@@ -41,15 +39,13 @@ HWND win32_init_window() {
 }
 
 // Draw the screen buffer to a device context
-void win32_draw_screen_buffer(Screen_Buffer* buffer, i32 x, i32 y)
+void win32_draw_screen_buffer(u32 *pixels, i32 width, i32 height, i32 x, i32 y)
 {
-    if (!buffer || !buffer->pixels) return;
-    
     // Creating a bitmap from our pixel data.
     BITMAPINFO bmi = {0};
     bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bmi.bmiHeader.biWidth = buffer->width;
-    bmi.bmiHeader.biHeight = -buffer->height; // Negative for top-down
+    bmi.bmiHeader.biWidth = width;
+    bmi.bmiHeader.biHeight = -height; // Negative for top-down
     bmi.bmiHeader.biPlanes = 1;
     bmi.bmiHeader.biBitCount = 32;
     bmi.bmiHeader.biCompression = BI_RGB;
@@ -58,12 +54,12 @@ void win32_draw_screen_buffer(Screen_Buffer* buffer, i32 x, i32 y)
     SetDIBitsToDevice(
         main_drawing_context,
         x, y,                    // Destination coordinates
-        buffer->width,           // Source width
-        buffer->height,          // Source height
+        width,                   // Source width
+        height,                  // Source height
         0, 0,                    // Source start coordinates
         0,                       // First scan line
-        buffer->height,          // Number of scan lines
-        buffer->pixels,          // Pixel data
+        height,                  // Number of scan lines
+        pixels,                  // Pixel data
         &bmi,                    // Bitmap info
         DIB_RGB_COLORS           // Color table type
     );
@@ -74,8 +70,8 @@ inline HDC win32_start_drawing() {
     return main_drawing_context;
 }
 
-inline void win32_finish_drawing(Screen_Buffer *screen_buffer) { 
-    win32_draw_screen_buffer(screen_buffer, 0, 0);
+inline void win32_finish_drawing(u32 *pixels, u32 width, i32 height) { 
+    win32_draw_screen_buffer(pixels, width, height, 0, 0);
     ReleaseDC(main_window, main_drawing_context);
     UpdateWindow(main_window);
     
