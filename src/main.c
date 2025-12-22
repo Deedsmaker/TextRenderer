@@ -98,13 +98,17 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             WCHAR wide_char = (WCHAR)wParam;
     
+            b32 is_support_key = wide_char == 127; // 127 is DEL, that occur on ctrl+backspace.
+    
             // Convert UTF-16 to UTF-8
             int buffer_size = WideCharToMultiByte(CP_UTF8, 0, &wide_char, 1, NULL, 0, NULL, NULL);
-            if (buffer_size > 0 && buffer_size <= 4)
+            if (buffer_size > 0 && buffer_size <= 4 && !is_support_key)
             {
                 static char buf[5];
                 // std::vector<char> utf8Buffer(buffer_size);
                 WideCharToMultiByte(CP_UTF8, 0, &wide_char, 1, buf, buffer_size, NULL, NULL);
+                
+                buf[buffer_size] = 0;
                 
                 builder_append_str(&input_text, buf);
             } else if (buffer_size > 4) {
