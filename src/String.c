@@ -6,7 +6,7 @@
 #include "my_defines.h"
 
 #define MEDIUM_STR_LEN 1024
-#define MAX_TEMP_LINES 16
+#define MAX_TEMP_LINES 32
 
 typedef struct String_Builder {
     Memory_Arena *arena;
@@ -503,7 +503,7 @@ const char *c_str(String string) {
     return string.data;
 }
 
-String make_string(Memory_Arena *arena, const char *text, ...){
+String string(Memory_Arena *arena, const char *text, ...){
     String result_string = {.arena = arena};
     
     if (!text) {
@@ -541,9 +541,9 @@ String make_substring(String original_string, int start_index, int end_index, Me
         return new_string;
     }
     
-    new_string.count = end_index - start_index + 1; // +1 because if end_index - start_index == 0 we need to add that exact index to substring etc..
+    new_string.count = end_index - start_index + 1; // +1 because if end_index - start_index == 0 we need to add that exact charactger to substring.
     
-    new_string.data = alloc(new_string.arena,  new_string.count + 1); // +1 for null termination.
+    new_string.data = alloc(new_string.arena, new_string.count + 1); // +1 for null termination.
     // @TODO: think about null termination.
     mem_copy(new_string.data, original_string.data + start_index, new_string.count * sizeof(char));
     new_string.data[new_string.count] = '\0';
@@ -613,17 +613,6 @@ String tstring(const char *text, ...) {
     
     return result_string;
 }
-
-// String copy_string(String to_copy){
-//     String new_string;
-
-//     new_string.count = to_copy->count;
-    
-//     new_string.data = (char*)calloc(1, new_string.capacity * sizeof(char));
-//     str_copy(new_string.data, to_copy->data);
-    
-//     return new_string;
-// }
 
 typedef struct Medium_Str{
     char data[MEDIUM_STR_LEN];  
@@ -710,7 +699,7 @@ void builder_free(String_Builder *builder) {
 
 inline String make_string_from_builder(String_Builder *builder, Memory_Arena *arena) {
     // @TODO: This works while we're using null termination.
-    return make_string(arena, builder->data);
+    return string(arena, builder->data);
 }
 
 String_Builder make_string_builder(String string, Memory_Arena *arena) {
