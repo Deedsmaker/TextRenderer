@@ -500,6 +500,8 @@ f32 to_f32_string(String string){
 const char *c_str(String string) {
     // Currently we null-terminate strings by default, so returning just data.
     if (string.count == 0) return "\0";
+    
+    
     return string.data;
 }
 
@@ -513,8 +515,8 @@ String string(Memory_Arena *arena, const char *text, ...){
     va_list args;
     va_start(args, text);
     i32 byte_count = vsnprintf(result_string.data, 0, text, args);
-    result_string.data = alloc(result_string.arena, byte_count + 1);
-    vsnprintf(result_string.data, byte_count + 1, text, args);
+    result_string.data = alloc(result_string.arena, byte_count);
+    vsnprintf(result_string.data, byte_count, text, args);
     va_end(args);
     
     result_string.count = byte_count;
@@ -525,7 +527,7 @@ String string(Memory_Arena *arena, const char *text, ...){
 String copy_string(String other, Memory_Arena *arena) {
     String s = {.arena = arena};
     
-    s.data = alloc(s.arena, other.count + 1);
+    s.data = alloc(s.arena, other.count);
     mem_copy(s.data, other.data, other.count);
     s.count = other.count;
     s.data[s.count] = 0;
@@ -543,10 +545,8 @@ String make_substring(String original_string, int start_index, int end_index, Me
     
     new_string.count = end_index - start_index + 1; // +1 because if end_index - start_index == 0 we need to add that exact charactger to substring.
     
-    new_string.data = alloc(new_string.arena, new_string.count + 1); // +1 for null termination.
-    // @TODO: think about null termination.
+    new_string.data = alloc(new_string.arena, new_string.count);
     mem_copy(new_string.data, original_string.data + start_index, new_string.count * sizeof(char));
-    new_string.data[new_string.count] = '\0';
     return new_string;
 }
 
@@ -605,25 +605,14 @@ String tstring(const char *text, ...) {
     va_list args;
     va_start(args, text);
     i32 byte_count = vsnprintf(result_string.data, 0, text, args);
-    result_string.data = alloc(result_string.arena, byte_count + 1);
-    vsnprintf(result_string.data, byte_count + 1, text, args);
+    result_string.data = alloc(result_string.arena, byte_count);
+    vsnprintf(result_string.data, byte_count, text, args);
     va_end(args);
     
     result_string.count = byte_count;
     
     return result_string;
 }
-
-typedef struct Medium_Str{
-    char data[MEDIUM_STR_LEN];  
-} Medium_Str;
-
-#define LONG_STR_LEN 2048
-
-typedef struct Long_Str {
-    char data[LONG_STR_LEN];  
-} Long_Str;
-
 
 char *c_str_builder(String_Builder *builder) {
     // Currently we null-terminate strings and builders by default, so returning just data.
@@ -638,14 +627,13 @@ void init_string_builder(String_Builder *builder, i32 capacity) {
     builder->count = 0;
 }
 
-// @TODO: I would like to get rid of null ternimation on strings, but while we working with Raylib that could be hard.
 static inline void builder_grow_if_need(String_Builder *builder, int appended_count) {
     assert(builder->data && builder->capacity > 0);
     
-    if (builder->count + appended_count + 1 > builder->capacity) {
+    if (builder->count + appended_count > builder->capacity) {
         char *old_data = builder->data;
         
-        while (builder->count + appended_count + 1 > builder->capacity) {
+        while (builder->count + appended_count > builder->capacity) {
             builder->capacity *= 2;
         }
         
