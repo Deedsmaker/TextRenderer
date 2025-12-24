@@ -89,7 +89,7 @@ void T##_array_just_decrease_count(Array_Name *array) {                         
     assert(array->count >= 0);                                                                                             \
 }                                                                                                                          \
                                                                                                                            \
-b32 T##_array_values_equal(Array_Name *array, Array_Name *another_array) {                                                 \
+bool T##_array_values_equal(Array_Name *array, Array_Name *another_array) {                                                 \
     if (array->count != another_array->count) return false;                                                                \
                                                                                                                            \
     for_array(i, array) {                                                                                                  \
@@ -162,7 +162,7 @@ void T##_array_remove_first_half(Array_Name *array){                            
     array->count = half_count;                                                                                             \
 }                                                                                                                          \
                                                                                                                            \
-inline b32 T##_array_contains(Array_Name *array, T *to_find) {                                                             \
+inline bool T##_array_contains(Array_Name *array, T *to_find) {                                                             \
     for_array(i, array) {                                                                                                  \
         if (compare_function(*T##_array_get(array, i), *to_find)) {                                                        \
             return true;                                                                                                   \
@@ -172,11 +172,11 @@ inline b32 T##_array_contains(Array_Name *array, T *to_find) {                  
     return false;                                                                                                          \
 }                                                                                                                          \
                                                                                                                            \
-inline b32 T##_array_contains_value(Array_Name *array, T to_find) {                                                        \
+inline bool T##_array_contains_value(Array_Name *array, T to_find) {                                                        \
     return T##_array_contains(array, &to_find);                                                                            \
 }                                                                                                                          \
                                                                                                                            \
-inline b32 T##_array_contains_at_least_one(Array_Name *array, Array_Name *another_array) {                                 \
+inline bool T##_array_contains_at_least_one(Array_Name *array, Array_Name *another_array) {                                 \
     for_array(i, another_array) {                                                                                          \
         if (T##_array_contains(array, T##_array_get(another_array, i))) {                                                  \
             return true;                                                                                                   \

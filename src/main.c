@@ -26,10 +26,10 @@
 
 #include "render.c"
 
-inline b32 compare_i32(i32 a, i32 b) { return a == b; }
+inline bool compare_i32(i32 a, i32 b) { return a == b; }
 DEFINE_ARRAY(Array_i32, i32, compare_i32);
 
-b32 should_run = true;
+bool should_run = true;
 
 String_Builder input_text = {0};
 
@@ -98,7 +98,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             WCHAR wide_char = (WCHAR)wParam;
     
-            b32 is_support_key = wide_char == 127; // 127 is DEL, that occur on ctrl+backspace.
+            bool is_support_key = wide_char == 127; // 127 is DEL, that occur on ctrl+backspace.
     
             // Convert UTF-16 to UTF-8
             int buffer_size = WideCharToMultiByte(CP_UTF8, 0, &wide_char, 1, NULL, 0, NULL, NULL);

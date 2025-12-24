@@ -142,6 +142,7 @@ static inline void blend_constant_alpha_4x(u32* dst, u32 fg_color, u32 alpha) {
 static inline void draw_pixel(i32 x, i32 y, Color color)
 {
     // Don't check for buffer bounds just so it would be a little faster.
+    
     if (color.a == 0xFF) {
         current_buffer->pixels[y * current_buffer->width + x] = 0xFF000000 | (color.r << 16) | (color.g << 8) | color.b;
         return;
@@ -226,17 +227,6 @@ void draw_line_raw(Vector2_i32 start, Vector2_i32 end, f32 thick)
         i32 e2 = 2 * err;
         if (e2 >= -dy) { err -= dy; x0 += sx; }
         if (e2 <=  dx) { err += dx; y0 += sy; }
-    }
-}
-
-void draw_rect_lines(Rect rect) {
-    i32 end_x = i32_clamp(rect.x + rect.w, 0, current_buffer->width - 1);
-    i32 end_y = i32_clamp(rect.y + rect.h, 0, current_buffer->height - 1);
-    
-    for (i32 y = rect.y; y < end_y; y++) {
-        for (i32 x = rect.x; x < end_x; x++) {
-            
-        }
     }
 }
 

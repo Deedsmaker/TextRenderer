@@ -73,11 +73,11 @@ inline char to_lower(char ch){
     return ch | 0x20;
 }
 
-inline b32 is_digit(char ch){
+inline bool is_digit(char ch){
     return ch >= '0' && ch <= '9';
 }
 
-b32 str_start_with(const char *str, const char *start_with){
+bool str_start_with(const char *str, const char *start_with){
     int len = str_len(str);
     int start_with_len = str_len(start_with);
     
@@ -198,7 +198,7 @@ char* get_substring_before_symbol(const char *line, char symbol){
     return buffer;
 }
 
-b32 str_end_with(char *str, const char *end_with){
+bool str_end_with(char *str, const char *end_with){
     int len = str_len(str);
     int end_with_len = str_len(end_with);
     
@@ -215,12 +215,12 @@ b32 str_end_with(char *str, const char *end_with){
     return true;
 }
 
-b32 str_contains_old(const char *str, const char *contains){
+bool str_contains_old(const char *str, const char *contains){
     size_t len = str_len(str);
     size_t contains_len = str_len(contains);
     
     size_t match_count = 0;
-    //b32 found_first_char = false;
+    //bool found_first_char = false;
     
     if (contains_len > len){
         return false;
@@ -244,7 +244,7 @@ b32 str_contains_old(const char *str, const char *contains){
 
 // This implementation seems more readable/understandable for some reason. 
 // Maybe because we're not using more variables (like match_count in old one).
-b32 str_contains_new(const char *string, const char *contains) {
+bool str_contains_new(const char *string, const char *contains) {
     size_t string_length = str_len(string);
     size_t contains_length = str_len(contains);
     
@@ -273,10 +273,10 @@ b32 str_contains_new(const char *string, const char *contains) {
     return false;
 }
 
-inline b32 str_contains(const char *string, const char *contains) {
+inline bool str_contains(const char *string, const char *contains) {
 #if DEBUG_BUILD
-    b32 old_result = str_contains_old(string, contains);
-    b32 new_result = str_contains_new(string, contains);
+    bool old_result = str_contains_old(string, contains);
+    bool new_result = str_contains_new(string, contains);
     assert(old_result == new_result && "New str_contains implementation is different from old!");
     return new_result;
 #else
@@ -284,15 +284,15 @@ inline b32 str_contains(const char *string, const char *contains) {
 #endif
 }
 
-// b32 str_contains(const char *str, const char *contains){
+// bool str_contains(const char *str, const char *contains){
 //     return str_contains_const(str, contains);
 // }
 
-// b32 str_contains(char *str, char *contains){
+// bool str_contains(char *str, char *contains){
 //     return str_contains_const(str, contains);
 // }
 
-b32 str_equal(const char *first, const char *second){
+bool str_equal(const char *first, const char *second){
     int len1 = str_len(first);
     int len2 = str_len(second);
     
@@ -388,7 +388,7 @@ typedef struct String {
     i32 count;
 } String;
 
-b32 string_equal(String first, String second) {
+bool string_equal(String first, String second) {
     if (first.count != second.count) return false;
         
     for (int i = 0; i < first.count; i++){
@@ -398,7 +398,7 @@ b32 string_equal(String first, String second) {
     return true;    
 }
 
-b32 string_equal_str(String string, const char *str){
+bool string_equal_str(String string, const char *str){
     int len = str_len(str);
 
     if (string.count != len) return false;
@@ -590,7 +590,7 @@ inline i32 string_find_from_back(String string, String to_find) {
     return -1;
 }
 
-inline b32 string_contains(String s, String to_find) {
+inline bool string_contains(String s, String to_find) {
     return string_find(s, to_find) >= 0;
 }
 
